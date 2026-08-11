@@ -2,7 +2,7 @@
 
 `BepInEx/config/com.tenpin.cfg`, written on first run.
 
-**Fifteen keys, eight of them the HUD.** During development this file had 57, covering
+**Eighteen keys, eleven of them the HUD.** During development this file had 57, covering
 dispersion, blast, signature, price, guidance and the aimpoint corrections. Those are
 settled and compiled into the build. The reasoning for each value sits next to the value
 in `Plugin.cs`.
@@ -31,6 +31,9 @@ does not remove keys a new version stopped binding, so an old file keeps 43 dead
 | `PanelAnchor` | Hud.HudAnchor.RightBelowWeapons |  | Where the text block and the magnifier sit. Presets rather than raw coordinates, because the useful positions are decided by what else is on screen: the chat log and kill feed own the top left, the stock weapon panel owns the top right, and the bottom edge carries the gear and flap cues. RightBelowWeapons clears all of them. |
 | `MaxRangeArc` | true |  | Draw the maximum-reach arc on the ground in artillery mode. It answers 'can I touch that from here' at a glance instead of by comparing two numbers. |
 | `Magnifier` | true |  | Draw a magnified inset of the area around the designated point. Lofting a long shot puts the cues low on the screen over the canopy rail, exactly when you are trying to lay one mark on another to within a few pixels. The inset magnifies the same marks rather than re-rendering them, so it cannot disagree with them, and it still works when the pipper has gone off the bottom of the screen. |
+| `MapMarker` | true |  | Mark the designated ground point on the map. The designation is made on the map and until now was drawn only in the cockpit, so the one screen where you set it gave no confirmation that it took or where it landed. The mark is a diamond in your own HUD colour, and it appears only while the pod is the selected weapon. |
+| `TerrainCheck` | true |  | Draw a designated point you cannot actually see as a dashed diamond instead of a solid one. The HUD is drawn over the world rather than in it, so a mark standing on a ridge and a mark three kilometres behind that ridge appear in the same place at the same size - this is the only thing telling them apart. One raycast per frame. |
+| `NoseAimBelowKph` | 100 |  | Below this airspeed the impact point is drawn as though the aircraft were moving straight along its nose, instead of along its actual velocity. Rockets keep whatever sideways speed you hand them, so when you are slow enough for a small drift to be a large part of your speed, a truthful cue wanders around under you and cannot be laid on a target. This one answers 'where do they go if I stop drifting', which is the question you can fly to. Only the horizontal is substituted; a descent is always shown truthfully. It fades out over the 40 km/h above the threshold, and above that it does nothing at all - a jet's cue is unaffected. 0 turns it off. |
 | `HideWithGear` | true |  | Hide the weapon HUD while the landing gear is down, which is what every stock weapon HUD does. |
 | `CockpitOnly` | true |  | Hide the HUD on the external cameras. Ours is drawn to a screen-space overlay canvas of our own, so unlike the stock HUD - which lives on the cockpit glass and simply is not in shot from outside - nothing hides it for us, and it would otherwise float over an orbit or chase view. |
 

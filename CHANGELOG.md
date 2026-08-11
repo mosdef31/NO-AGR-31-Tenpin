@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.9.1 - 2026-08-12
+
+- Rockets in flight had no map icon, which the game drew as a big filled square - so a
+  salvo covered the map in them. They are small darts now, pointing the way they are
+  going.
+- A designated point you cannot actually see is drawn as a dashed diamond, so a mark on a
+  ridge and a mark behind it stop looking identical. `[HUD] TerrainCheck` turns it off.
+- The pod is offered on the F-99 Shrike.
+- Fixed aiming at low speed, which was worst on helicopters: the impact point used to be
+  drawn behind you or off to one side and could not be laid on a target. Below
+  `[HUD] NoseAimBelowKph` (100 km/h) the cue is drawn as though you were tracking straight
+  along your nose, which is the question you can fly to. Only the horizontal is
+  substituted, so a descent is still shown truthfully, and above the threshold nothing
+  changes at all.
+- Rockets keep whatever sideways speed you hand them, so fly in balance before firing.
+- The pod is now offered on the CI-22 Cricket, the RAH-72 Knockout and the F-16M King
+  Viper, and on the MiG-15 it is on the wing pylons only - it was being offered in place
+  of the cannons and the tail hook.
+- The point you designate with T is now marked on the map, in your own HUD colour, while
+  the pod is selected. It was drawn only in the cockpit before, so the screen you set it
+  from gave no sign it had taken. `[HUD] MapMarker` turns it off.
+
 ## 0.9.0 - 2026-08-11
 
 First release.

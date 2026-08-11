@@ -34,6 +34,9 @@ namespace RocketPod
         public static ConfigEntry<Hud.HudAnchor> HudPanelAnchor { get; private set; } = null!;
         public static ConfigEntry<bool> HudMaxRangeArc { get; private set; } = null!;
         public static ConfigEntry<bool> HudMagnifier { get; private set; } = null!;
+        public static ConfigEntry<bool> HudMapMarker { get; private set; } = null!;
+        public static ConfigEntry<float> HudNoseAimBelowKph { get; private set; } = null!;
+        public static ConfigEntry<bool> HudTerrainCheck { get; private set; } = null!;
         public static ConfigEntry<bool> HudHideWithGear { get; private set; } = null!;
         public static ConfigEntry<bool> HudCockpitOnly { get; private set; } = null!;
 
@@ -97,7 +100,8 @@ namespace RocketPod
         public static Settled<float> RoundCostMillions { get; } = Fixed(0.025f);
 
         public static Settled<string> ExtraHardpoints { get; } =
-            Fixed("AttackHelo1:2,3,4; UtilityHelo1:0,1; trainer:1,2; VTOLTrainer1:3,4; MiG-15:*");
+            Fixed("AttackHelo1:2,3,4; UtilityHelo1:0,1; trainer:1,2; VTOLTrainer1:3,4; " +
+                  "MiG-15:2; COIN:2,3; RAH-72:0,1,2,3; F-16M:1,2,3,4; Shrike:2,3");
 
         public static Settled<bool> UseStockEffects { get; } = Fixed(true);
 
@@ -191,6 +195,8 @@ namespace RocketPod
 
                 _harmony.PatchAll(typeof(Kinematics_GetBallisticAimPoint_FlightTimePatch));
 
+                _harmony.PatchAll(typeof(UnitMapIcon_SetIcon_RoundIconPatch));
+
                 gameObject.AddComponent<AssetCheckRunner>();
                 gameObject.AddComponent<Hud.TenpinHud>();
 
@@ -273,6 +279,43 @@ namespace RocketPod
                     "bottom of the screen.",
                     null,
                     new ConfigurationManagerAttributes { Order = 50 }));
+
+            HudMapMarker = Config.Bind(
+                "HUD", "MapMarker", true,
+                new ConfigDescription(
+                    "Mark the designated ground point on the map. The designation is made on the " +
+                    "map and until now was drawn only in the cockpit, so the one screen where " +
+                    "you set it gave no confirmation that it took or where it landed. The mark " +
+                    "is a diamond in your own HUD colour, and it appears only while the pod is " +
+                    "the selected weapon.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 45 }));
+
+            HudNoseAimBelowKph = Config.Bind(
+                "HUD", "NoseAimBelowKph", 100f,
+                new ConfigDescription(
+                    "Below this airspeed the impact point is drawn as though the aircraft were " +
+                    "moving straight along its nose, instead of along its actual velocity. " +
+                    "Rockets keep whatever sideways speed you hand them, so when you are slow " +
+                    "enough for a small drift to be a large part of your speed, a truthful cue " +
+                    "wanders around under you and cannot be laid on a target. This one answers " +
+                    "'where do they go if I stop drifting', which is the question you can fly " +
+                    "to. Only the horizontal is substituted; a descent is always shown " +
+                    "truthfully. It fades out over the 40 km/h above the threshold, and above " +
+                    "that it does nothing at all - a jet's cue is unaffected. 0 turns it off.",
+                    new AcceptableValueRange<float>(0f, 300f),
+                    new ConfigurationManagerAttributes { Order = 44 }));
+
+            HudTerrainCheck = Config.Bind(
+                "HUD", "TerrainCheck", true,
+                new ConfigDescription(
+                    "Draw a designated point you cannot actually see as a dashed diamond instead " +
+                    "of a solid one. The HUD is drawn over the world rather than in it, so a " +
+                    "mark standing on a ridge and a mark three kilometres behind that ridge " +
+                    "appear in the same place at the same size - this is the only thing telling " +
+                    "them apart. One raycast per frame.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 43 }));
 
             HudHideWithGear = Config.Bind(
                 "HUD", "HideWithGear", true,

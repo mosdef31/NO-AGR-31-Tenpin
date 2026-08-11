@@ -46,13 +46,26 @@ number above is what you get in normal use, not a maximum.
 Hard to shoot down, on purpose. A defence can hit these, but it burns two interceptors
 per rocket doing it, so a full salvo empties a launcher whether or not it connects.
 
+## What it looks like
+
+![A-19 carrying a full six station load](./images/a19-loadout-sunflare.jpg)
+
+| | |
+|---|---|
+| ![A salvo head on](./images/salvo-head-on.jpg) | ![A firing run against terrain](./images/firing-run-mountain.jpg) |
+| ![A rocket leaving the tube](./images/wing-salvo-firing.jpg) | ![Climbing with the motor lit](./images/climb-motor-lit.jpg) |
+
+Two flights are recorded in [`video/`](./video): one firing on a map designation, one
+against a target picked out of the cockpit.
+
 ## The HUD
 
 The stock missile UI does not show you where an unguided rocket lands, so the pod draws
 its own.
 
 **Artillery mode** is for lobbing them at something you can see on the map. Open the map,
-press **T** on a spot, and the HUD shows where the salvo will land, how big the spread
+press **T** on a spot - it is marked on the map so you can see it took - and the HUD
+shows where the salvo will land, how big the spread
 will be, how far you can reach, and turns the cue green when you should fire.
 
 **Direct mode** is for the gun run. It shows a moving impact point you fly onto.
@@ -64,8 +77,9 @@ carefully. Locking a unit overrides whatever you designated on the ground.
 ## What carries it
 
 The A-19 out of the box, plus the SAH-46 Chicane, UH-90 Ibis, T/A-30 Compass and VT-7
-Vagrant, which already carry the AGR-24. Aryx's MiG-15 too if you have it. You can add
-other aircraft in the config by name.
+Vagrant and the CI-22 Cricket, which already carry the AGR-24. Aryx's MiG-15, RAH-72
+Knockout and F-16M King Viper too if you have them. You can add other aircraft in the
+config by name.
 
 Helicopters work but are the worst platform for it. Hovering, you have no speed to give
 the rocket and cannot point the nose up, so you throw away most of the range.
@@ -104,8 +118,7 @@ Full list: [`CONFIG.md`](./CONFIG.md).
 
 ## Known issues
 
-- **Helicopters are the weakest platform.** Better in 0.9.0 than it was, but a hover
-  still has almost no reach.
+- **Helicopters are the weakest platform.** A hover has almost no reach.
 - **Multiplayer is untested.** Nobody has flown this with another player. It is the
   biggest unknown in the mod.
 

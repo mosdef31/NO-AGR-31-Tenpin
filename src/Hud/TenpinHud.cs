@@ -52,6 +52,8 @@ namespace RocketPod.Hud
         private bool _hasGroundDesignation;
         private float _designationRadius;
 
+        private readonly DesignationMapMarker _mapMarker = new DesignationMapMarker();
+
         private float _maxRange;
         private float _nextMaxRange;
 
@@ -118,6 +120,8 @@ namespace RocketPod.Hud
                 if (Input.GetKeyDown(Plugin.HudModeKey.Value)) ToggleMode();
                 HandleDesignateInput();
                 Draw();
+
+                DrawMapMarker();
             }
             catch (Exception ex)
             {
@@ -154,7 +158,8 @@ namespace RocketPod.Hud
             if (spec == null) { Hide(); return; }
 
             Vector3 launch = aircraft.transform.GlobalPosition().AsVector3();
-            Vector3 velocity = aircraft.rb.velocity + aircraft.transform.forward * EjectionSpeed(station);
+            Vector3 inherited = NoseReferenced(aircraft);
+            Vector3 velocity = inherited + aircraft.transform.forward * EjectionSpeed(station);
 
             float step = Mathf.Max(1f, Plugin.HudStepScale.Value);
             TrajectorySolver.Result r = TrajectorySolver.Integrate(
@@ -176,7 +181,7 @@ namespace RocketPod.Hud
             float launchSpeed = aircraft.rb.velocity.magnitude;
             float lerpRate = LowSpeedLaunch.PipperLerpRate(launchSpeed);
 
-            Vector3 target = r.ImpactPoint + aircraft.rb.velocity * 0.3f;
+            Vector3 target = r.ImpactPoint + inherited * 0.3f;
             _impactSmoothed = _hasImpact
                 ? Vector3.Lerp(_impactSmoothed, target, lerpRate * Time.deltaTime)
                 : target;
@@ -356,6 +361,7 @@ namespace RocketPod.Hud
                 FootprintRing(cam, target, cep * 2.08f * ringScale, Fade(cue, 0.40f), 1.3f * px, out _);
 
                 bool haveTarget = TryProject(cam, target, out Vector2 tgt);
+                bool targetHidden = haveTarget && Hidden(cam, target);
                 if (haveTarget)
                 {
                     float d = 7f * px;
@@ -364,7 +370,9 @@ namespace RocketPod.Hud
                         tgt + new Vector2(0f, d), tgt + new Vector2(d, 0f),
                         tgt - new Vector2(0f, d), tgt - new Vector2(d, 0f),
                     };
-                    _vec.Polyline(diamond, 1.8f * px, cue, closed: true);
+
+                    if (targetHidden) DashedPolyline(diamond, 1.8f * px, cue, 3f * px);
+                    else _vec.Polyline(diamond, 1.8f * px, cue, closed: true);
                 }
 
                 if (impactVisible)
@@ -395,6 +403,12 @@ namespace RocketPod.Hud
                     SetText(ref i2, Centre(px, 0f), "OUT OF REACH", Warn(hud), px);
                 else if (onTarget)
                     SetText(ref i2, Centre(px, 0f), "FIRE", FireCue(hud), px);
+
+                if (targetHidden)
+                {
+                    SetText(ref i2, Centre(px, 22f * px),
+                            "TARGET BEHIND COVER", Fade(hud, 0.7f), px);
+                }
 
                 Magnifier(ref i2, cam, target, cep, missDist, tolerance, cue, hud, px);
             }
@@ -435,11 +449,23 @@ namespace RocketPod.Hud
             return false;
         }
 
+        private void DrawMapMarker()
+        {
+            if (!_hasGroundDesignation || !OurWeaponSelected(out _, out _))
+            {
+                _mapMarker.Hide();
+                return;
+            }
+            _mapMarker.Show(_groundDesignation);
+        }
+
         internal void ClearDesignation(string why)
         {
             if (!_hasGroundDesignation) return;
             _hasGroundDesignation = false;
             _designationRadius = 0f;
+
+            _mapMarker.Destroy();
             Plugin.Log.LogInfo($"[Tenpin] Ground designation cleared ({why}).");
         }
 
@@ -469,11 +495,8 @@ namespace RocketPod.Hud
 
             if (ClearPressed())
             {
-                if (_hasGroundDesignation)
-                {
-                    _hasGroundDesignation = false;
-                    Plugin.Log.LogInfo("[Tenpin] Ground designation cleared.");
-                }
+
+                ClearDesignation("untargeted");
                 return;
             }
 
@@ -716,6 +739,35 @@ namespace RocketPod.Hud
             if (run.Count > 1) DottedPolyline(run, width, color, 9f, 7f);
         }
 
+        private static bool Hidden(Camera cam, Vector3 global)
+        {
+            if (!Plugin.HudTerrainCheck.Value) return false;
+
+            Vector3 local = new GlobalPosition(global.x, global.y + 4f, global.z)
+                .ToLocalPosition();
+            return TerrainMasking.IsHidden(cam, local);
+        }
+
+        private void DashedPolyline(Vector2[] points, float width, Color color, float dash)
+        {
+            if (_vec == null) return;
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                Vector2 a = points[i];
+                Vector2 b = points[(i + 1) % points.Length];
+                float len = (b - a).magnitude;
+                if (len < 1e-3f) continue;
+
+                Vector2 dir = (b - a) / len;
+                for (float t = 0f; t < len; t += dash * 2f)
+                {
+                    float end = Mathf.Min(t + dash, len);
+                    _vec.Line(a + dir * t, a + dir * end, width, color);
+                }
+            }
+        }
+
         private void ImpactCross(Vector2 at, Color hud, float px, bool onTarget)
         {
             if (_vec == null) return;
@@ -837,6 +889,30 @@ namespace RocketPod.Hud
             if (ceiling > 0f) cep = Mathf.Min(cep, ceiling);
             return cep;
         }
+
+        private static Vector3 NoseReferenced(Aircraft aircraft)
+        {
+            Vector3 v = aircraft.rb.velocity;
+
+            float below = Plugin.HudNoseAimBelowKph.Value;
+            if (below <= 0f) return v;
+
+            float kph = v.magnitude * 3.6f;
+            if (kph >= below + NoseAimBlendKph) return v;
+
+            Vector3 flat = new Vector3(v.x, 0f, v.z);
+            Vector3 noseFlat = new Vector3(aircraft.transform.forward.x, 0f,
+                                           aircraft.transform.forward.z);
+            if (noseFlat.sqrMagnitude < 1e-6f) return v;
+
+            Vector3 substituted = noseFlat.normalized * flat.magnitude;
+            substituted.y = v.y;
+
+            float blend = 1f - Mathf.Clamp01((kph - below) / Mathf.Max(NoseAimBlendKph, 0.01f));
+            return Vector3.Lerp(v, substituted, blend);
+        }
+
+        private const float NoseAimBlendKph = 40f;
 
         private static Color HudColor()
         {
@@ -1019,6 +1095,7 @@ namespace RocketPod.Hud
         private void Hide()
         {
             _hasImpact = false;
+            _mapMarker.Hide();
             if (_vec != null)
             {
                 _vec.Begin();

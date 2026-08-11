@@ -22,11 +22,6 @@ namespace RocketPod
             return Mathf.Clamp(ReferenceSpeed / s, 1f, MaxRelief);
         }
 
-        internal static float PipperLerpRate(float speedMS)
-        {
-            const float StockRate = 5f;
-            const float FloorRate = 1.2f;
-            return Mathf.Max(FloorRate, StockRate * SpeedFraction(speedMS));
-        }
+        internal static float PipperLerpRate(float speedMS) => 5f;
     }
 }

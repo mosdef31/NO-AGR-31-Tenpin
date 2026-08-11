@@ -5,7 +5,7 @@ namespace RocketPod
 
         internal const string GUID = "com.tenpin";
         internal const string Name = "AGR-31 Tenpin";
-        internal const string Version = "0.9.0";
+        internal const string Version = "0.9.1";
 
         internal const string MountKey = "AGR31_Tenpin";
         internal const string MountKey19 = "AGR31_Tenpin_19";
