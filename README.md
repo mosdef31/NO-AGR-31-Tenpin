@@ -106,12 +106,8 @@ Full list: [`CONFIG.md`](./CONFIG.md).
 
 - **Helicopters are the weakest platform.** Better in 0.9.0 than it was, but a hover
   still has almost no reach.
-- **The explosion is borrowed from another weapon** and reads weaker than the rocket
-  actually hits. This is cosmetic, not a damage problem.
 - **Multiplayer is untested.** Nobody has flown this with another player. It is the
   biggest unknown in the mod.
-- **Blast damage may be too low.** It was set by judgement rather than measured against
-  anything, and it is capped while the explosion effect is borrowed.
 
 ## Background
 
