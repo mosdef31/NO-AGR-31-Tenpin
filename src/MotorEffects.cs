@@ -74,35 +74,75 @@ namespace RocketPod
 
         private readonly struct Donor
         {
-            internal Donor(Missile m, Transform fx, float burn) { Missile = m; Fx = fx; Burn = burn; }
+            internal Donor(Missile m, Transform fx, float burn, int flames, int lights)
+            {
+                Missile = m; Fx = fx; Burn = burn; Flames = flames; Lights = lights;
+            }
             internal Missile Missile { get; }
             internal Transform Fx { get; }
             internal float Burn { get; }
+
+            internal int Flames { get; }
+            internal int Lights { get; }
+
+            internal bool Usable => Flames > 0;
+
             internal string Key => Missile.definition != null ? Missile.definition.jsonKey : "?";
         }
 
         private static Donor ChooseDonor(List<Donor> donors)
         {
-            string wanted = Plugin.MotorEffectDonor.Value;
-            if (!string.IsNullOrWhiteSpace(wanted))
+
+            List<Donor> pool = donors.Where(d => d.Usable).ToList();
+            if (pool.Count == 0)
             {
-                foreach (Donor d in donors)
-                    if (d.Key == wanted) return d;
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] Effect donor '{wanted}' not found or has no effects; falling back " +
-                    "to automatic selection. The candidate list is logged above.");
+                    "[Tenpin] No donor in this build has a flame system that is not owned by its " +
+                    "trail emitter, so the borrowed exhaust will be smoke only. The candidate " +
+                    "list above prints flames= for each; if they are all 0 the classifier's " +
+                    $"{PlumeTint.FlameLifetimeSeconds:0.##}s lifetime threshold is wrong for 0.34.");
+                pool = donors;
             }
 
-            var rockets = donors
-                .Where(d => d.Key.IndexOf("AGR", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            d.Key.IndexOf("Rocket", StringComparison.OrdinalIgnoreCase) >= 0)
-                .ToList();
+            string preference = Plugin.MotorEffectDonor.Value;
+            if (DonorPreference.TryBest(pool, d => d.Key, preference,
+                                        out Donor preferred, out string why))
+            {
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] Motor effect donor '{preferred.Key}' - {why}; " +
+                    $"{preferred.Flames} flame system(s), {preferred.Lights} light(s).");
+                return preferred;
+            }
 
-            List<Donor> pool = rockets.Count > 0 ? rockets : donors;
-            return pool
+            if (!string.IsNullOrWhiteSpace(preference))
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] No donor WITH FIRE matched any of '{preference}', so one was chosen " +
+                    "automatically. This is expected rather than an error - the stock rockets " +
+                    "carry smoke and a trail and leave the fire to the launcher. The candidate " +
+                    "list above prints flames= per donor.");
+
+            Donor pick = pool
                 .OrderBy(d => Math.Abs(d.Burn - OurBurn(donors)))
-                .ThenByDescending(d => Flash(d.Fx))
+                .ThenByDescending(d => d.Lights)
+                .ThenByDescending(d => d.Flames)
                 .First();
+
+            Plugin.Log.LogInfo(
+                $"[Tenpin] Motor effect donor '{pick.Key}' - closest burn to ours with fire " +
+                $"({pick.Flames} flame system(s), {pick.Lights} light(s), burn {pick.Burn:0.#}s).");
+            return pick;
+        }
+
+        private static void Score(Transform fx, out int flames, out int lights)
+        {
+            var trailOwned = new HashSet<ParticleSystem>();
+            FieldInfo? fTrailSystem = AccessTools.Field(typeof(TrailEmitter), "trailSystem");
+            foreach (TrailEmitter te in fx.GetComponentsInChildren<TrailEmitter>(true))
+                if (fTrailSystem?.GetValue(te) is ParticleSystem ts) trailOwned.Add(ts);
+
+            flames = fx.GetComponentsInChildren<ParticleSystem>(true)
+                       .Count(p => p != null && !trailOwned.Contains(p) && PlumeTint.IsFlame(p));
+            lights = fx.GetComponentsInChildren<Light>(true).Length;
         }
 
         private static float OurBurn(List<Donor> donors) =>
@@ -131,6 +171,7 @@ namespace RocketPod
             var particles = clone.GetComponentsInChildren<ParticleSystem>(true).ToList();
             var trails = clone.GetComponentsInChildren<TrailEmitter>(true).ToList();
             var lights = clone.GetComponentsInChildren<Light>(true).ToList();
+            var audio = clone.GetComponentsInChildren<AudioSource>(true).ToList();
 
             var trailOwned = new HashSet<ParticleSystem>();
             FieldInfo? fTrailSystem = AccessTools.Field(typeof(TrailEmitter), "trailSystem");
@@ -146,6 +187,21 @@ namespace RocketPod
             }
             particles.RemoveAll(p => trailOwned.Contains(p));
 
+            float scale = SalvoBudget.EmissionScale();
+            SalvoBudget.ApplyEmissionScale(particles, scale);
+            SalvoBudget.ApplyEmissionScale(trailOwned, scale);
+
+            PlumeTint.Describe(donor.Key, particles);
+            PlumeTint.Apply(particles);
+
+            foreach (AudioSource a in audio)
+            {
+                if (a == null) continue;
+                a.playOnAwake = false;
+                a.Stop();
+                a.enabled = false;
+            }
+
             SetMotorArray(motor, "particleSystems", particles.ToArray());
             SetMotorArray(motor, "trailEmitters", trails.ToArray());
             SetMotorArray(motor, "lights", lights.ToArray());
@@ -156,10 +212,15 @@ namespace RocketPod
                 Plugin.Log.LogInfo(
                     $"[Tenpin] Motor effects borrowed from '{donor.Key}' (burn {donor.Burn:0.#}s): " +
                     $"{particles.Count} particle system(s), {trails.Count} trail emitter(s), " +
-                    $"{lights.Count} light(s)" +
+                    $"{lights.Count} light(s), {audio.Count} audio source(s)" +
                     (silenced > 0 ? $"; silenced {silenced} authored system(s)" : "") +
                     ". Author real ones in Unity and this stops running - it only fills empty slots.");
             }
+
+            if (scale < 0.999f)
+                Plugin.Log.LogDebug(
+                    $"[Tenpin] Salvo budget: {SalvoBudget.Live} round(s) up, emission scaled to " +
+                    $"{scale:0.00}.");
         }
 
         private static void SetMotorArray(object motor, string field, Array value)
@@ -172,7 +233,7 @@ namespace RocketPod
         {
             var found = new List<Donor>();
             Encyclopedia? enc = null;
-            try { enc = Encyclopedia.i; } catch {  }
+            enc = GameData.EncyclopediaOrNull();
             if (enc?.missiles == null) return found;
 
             foreach (MissileDefinition md in enc.missiles)
@@ -186,7 +247,9 @@ namespace RocketPod
 
                 float burn = m.GetTotalBurnTime();
                 if (burn <= 0f) continue;
-                found.Add(new Donor(m, t, burn));
+
+                Score(t, out int flames, out int lights);
+                found.Add(new Donor(m, t, burn, flames, lights));
             }
 
             if (!_donorsLogged && found.Count > 0)
@@ -196,9 +259,14 @@ namespace RocketPod
                 foreach (Donor d in found.OrderBy(d => d.Burn))
                     Plugin.Log.LogInfo(
                         $"[Tenpin]   '{d.Key}' burn={d.Burn:0.#}s particles={Flash(d.Fx)} " +
-                        $"lights={Lights(d.Fx)} " +
+                        $"FLAMES={d.Flames} lights={Lights(d.Fx)} " +
                         $"trails={d.Fx.GetComponentsInChildren<TrailEmitter>(true).Length}");
-                Plugin.Log.LogInfo("[Tenpin]   Pin one with Effects/MotorEffectDonor.");
+                Plugin.Log.LogInfo(
+                    "[Tenpin]   flames= is the column that matters and particles= is not: it " +
+                    "counts short-lived systems that are NOT owned by a trail emitter, which is " +
+                    "the only thing that draws fire. A donor at flames=0 gives smoke and nothing " +
+                    "else, which is exactly what Rocket_MLRS1 did. Pin one with " +
+                    "Plugin.MotorEffectDonor.");
             }
 
             return found;
@@ -216,6 +284,7 @@ namespace RocketPod
                 if (__instance.definition == null ||
                     __instance.definition.jsonKey != PluginInfo.MissileKey) return;
 
+                FunEffects.StripMotor(__instance);
                 MotorEffects.Apply(__instance);
             }
             catch (Exception ex)

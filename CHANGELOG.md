@@ -24,6 +24,44 @@ First release.
 - A magnifier near release.
 - Hides with the landing gear and on the external cameras.
 
+### Sound, and a salvo budget
+
+- The pod had no sound at all. It now has a launch report per shot, played at the tube
+  that fired, layered across eight voices so an 0.08 s ripple reads as a roar instead of
+  one clipped click repeated forty-two times.
+- Rounds carry a motor loop in flight, capped at six at once. Sound does not thin out
+  gracefully the way particles do: a hundred copies of one clip is comb filtering, not a
+  louder rocket.
+- Plume and smoke emission taper once more than eight rounds are up, with a floor, so the
+  heavy pod's 114-round salvo costs less than 114 times one round.
+
+Every part of this fills a slot the bundle authors empty, and stops running by itself the
+moment real effects are authored in Unity.
+
+### The plume, behind `Fun effects`
+
+The AGR-31 can burn cyan. The Combine modernised exactly one thing about an eighty-year-old
+rocket, and it was the motor, so the plume is where that shows: a near-white core through
+cyan to a violet fringe, cooling into cool grey smoke. Every other rocket in the game is
+orange, which is the point - a Tenpin salvo is identifiable as one at fifteen kilometres.
+
+That set is authored rather than borrowed: a short hot plume, an ignition ember burst, a
+light at the nozzle, a smoke trail that lingers after the round is gone, and a separate
+flash and puff at each tube as it fires.
+
+**It ships off.** `[Effects] Fun effects` turns it on. The default is the game's own rocket
+effects, borrowed at spawn, because the authored set is deliberately over the top and that
+is not what the weapon is. The sound is the same either way. Off does real work rather than
+skipping a branch - the effects live on the prefab, so the plugin takes them back out
+before borrowing.
+
+The borrow itself got two fixes it needed. Donors are now scored by whether they carry
+FIRE, not by how many particle systems they have: the preferred donor was a stock MLRS
+rocket whose only non-trail system is a one-second white smoke puff, so the default mode
+flew with smoke and nothing else. The flash at the tube had the same fault for the same
+reason. The detonation borrows from the rocket family rather than from a heavy anti-ship
+missile, which overshot in the other direction.
+
 ### Aimpoint corrections
 
 Three stock seeker assumptions that are wrong for a powered rocket:
@@ -46,4 +84,5 @@ for a jet. Both now scale with launch speed, and both are unchanged at and above
 - **The asset bundle ships inside the DLL.** One file instead of two. Blueprinter loads
   embedded bundles through the same path as loose ones, so PrefabHash assignment and the
   patch manifest are unaffected.
-- The config went from 57 keys to 14. Balance values are settled and compiled in.
+- The config went from 57 keys to 15. Balance values are settled and compiled in; what is
+  left is the HUD, the diagnostics, and `Fun effects`.

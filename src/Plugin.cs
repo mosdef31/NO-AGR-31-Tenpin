@@ -37,6 +37,8 @@ namespace RocketPod
         public static ConfigEntry<bool> HudHideWithGear { get; private set; } = null!;
         public static ConfigEntry<bool> HudCockpitOnly { get; private set; } = null!;
 
+        public static ConfigEntry<bool> FunEffectsEnabled { get; private set; } = null!;
+
         public static ConfigEntry<bool> DumpTuningReadout { get; private set; } = null!;
         public static ConfigEntry<bool> DumpPrefabRenderers { get; private set; } = null!;
         public static ConfigEntry<bool> DumpFlightModels { get; private set; } = null!;
@@ -95,11 +97,18 @@ namespace RocketPod
         public static Settled<float> RoundCostMillions { get; } = Fixed(0.025f);
 
         public static Settled<string> ExtraHardpoints { get; } =
-            Fixed("AttackHelo1:2,3,4; UtilityHelo1:0,1; trainer:1,2; VTOLTrainer1:3,4");
+            Fixed("AttackHelo1:2,3,4; UtilityHelo1:0,1; trainer:1,2; VTOLTrainer1:3,4; MiG-15:*");
 
         public static Settled<bool> UseStockEffects { get; } = Fixed(true);
 
-        public static Settled<string> MotorEffectDonor { get; } = Fixed("");
+        public static Settled<string> MotorEffectDonor { get; } =
+            Fixed("Rocket_MLRS1, Rocket2, Rocket1, AGR");
+
+        public static Settled<string> WarheadEffectDonor { get; } =
+            Fixed("Rocket2, Rocket_MLRS1, Rocket1, AGR, AGM1");
+
+        public static Settled<string> LaunchEffectDonor { get; } =
+            Fixed("Rocket_MLRS1, Rocket2, Rocket1, AGR");
 
         public static Settled<bool> HideFiredRounds { get; } = Fixed(true);
 
@@ -109,7 +118,7 @@ namespace RocketPod
 
         public static Settled<bool> SpinRounds { get; } = Fixed(true);
 
-        public static Settled<float> SpinDegreesPerSecond { get; } = Fixed(420f);
+        public static Settled<float> SpinDegreesPerSecond { get; } = Fixed(640f);
 
         public static Settled<float> TuningLaunchAltitude { get; } = Fixed(1500f);
 
@@ -150,8 +159,21 @@ namespace RocketPod
 
                 _harmony.PatchAll(typeof(Encyclopedia_AfterLoad_RegistrationPatch));
 
+                _harmony.PatchAll(typeof(WeaponMount_Initialize_NullPrefabGuard));
+
+                _harmony.PatchAll(typeof(Missile_OnStartClient_BudgetPatch));
+
                 if (UseStockEffects.Value)
                     _harmony.PatchAll(typeof(Missile_OnStartClient_EffectsPatch));
+
+                if (UseStockEffects.Value)
+                    _harmony.PatchAll(typeof(MissileLauncher_Fire_AudioPatch));
+
+                if (UseStockEffects.Value)
+                    _harmony.PatchAll(typeof(MissileLauncher_OnEnable_LaunchParticlesPatch));
+
+                if (UseStockEffects.Value)
+                    _harmony.PatchAll(typeof(Missile_OnStartClient_FlightAudioPatch));
 
                 _harmony.PatchAll(typeof(WeaponStation_LaunchMount_CyclePatch));
 
@@ -270,6 +292,17 @@ namespace RocketPod
                     null,
                     new ConfigurationManagerAttributes { Order = 30 }));
 
+            FunEffectsEnabled = Config.Bind(
+                "Effects", "Fun effects", false,
+                new ConfigDescription(
+                    "Play the AGR-31's own authored effects: a cyan motor plume, an ignition " +
+                    "ember burst, a nozzle light, a smoke trail and a flash at the tube. It is a " +
+                    "deliberately gamey look and it is not what the weapon is supposed to be, " +
+                    "which is why it ships OFF - off borrows the game's own rocket effects. The " +
+                    "sound is the same either way. Takes effect on the next round fired.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 100 }));
+
             DumpTuningReadout = Config.Bind(
                 "Advanced", "TuningReadout", false,
                 new ConfigDescription(
@@ -347,7 +380,7 @@ namespace RocketPod
             _attempts++;
 
             Encyclopedia? enc = null;
-            try { enc = Encyclopedia.i; } catch {  }
+            enc = GameData.EncyclopediaOrNull();
             if (enc == null) return;
 
             try
@@ -355,6 +388,8 @@ namespace RocketPod
                 EncyclopediaRegistration.EnsureRegisteredAndRebuild();
 
                 ExtraHardpoints.Apply();
+
+                FxShaderBinding.RunOnce();
 
                 WarheadEffects.RunOnce();
                 AssetCheck.RunOnce();

@@ -2,10 +2,15 @@
 
 `BepInEx/config/com.tenpin.cfg`, written on first run.
 
-**Fourteen keys, eight of them the HUD.** During development this file had 57, covering
+**Fifteen keys, eight of them the HUD.** During development this file had 57, covering
 dispersion, blast, signature, price, guidance and the aimpoint corrections. Those are
 settled and compiled into the build. The reasoning for each value sits next to the value
 in `Plugin.cs`.
+
+`[Effects]` holds one key, and it is taste rather than balance: the pod ships with the
+game's own borrowed rocket effects, and `Fun effects` swaps in the set authored for this
+weapon - a cyan plume and a flash at the tube. It is deliberately over the top. It changes
+the look only; the pod sounds the same either way.
 
 Everything under `[Advanced]` is a diagnostic dump. All off by default, all writing to
 the log or a file under `BepInEx/`, none of it changing how the weapon flies. With
@@ -28,6 +33,12 @@ does not remove keys a new version stopped binding, so an old file keeps 43 dead
 | `Magnifier` | true |  | Draw a magnified inset of the area around the designated point. Lofting a long shot puts the cues low on the screen over the canopy rail, exactly when you are trying to lay one mark on another to within a few pixels. The inset magnifies the same marks rather than re-rendering them, so it cannot disagree with them, and it still works when the pipper has gone off the bottom of the screen. |
 | `HideWithGear` | true |  | Hide the weapon HUD while the landing gear is down, which is what every stock weapon HUD does. |
 | `CockpitOnly` | true |  | Hide the HUD on the external cameras. Ours is drawn to a screen-space overlay canvas of our own, so unlike the stock HUD - which lives on the cockpit glass and simply is not in shot from outside - nothing hides it for us, and it would otherwise float over an orbit or chase view. |
+
+## Effects
+
+| Key | Default | | Effect |
+|---|---|---|---|
+| `Fun effects` | false |  | Play the AGR-31's own authored effects: a cyan motor plume, an ignition ember burst, a nozzle light, a smoke trail and a flash at the tube. It is a deliberately gamey look and it is not what the weapon is supposed to be, which is why it ships OFF - off borrows the game's own rocket effects. The sound is the same either way. Takes effect on the next round fired. |
 
 ## Advanced
 

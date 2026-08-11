@@ -90,7 +90,7 @@ namespace RocketPod
         internal static bool EnsureRegisteredAndRebuild()
         {
             Encyclopedia? enc = null;
-            try { enc = Encyclopedia.i; } catch {  }
+            enc = GameData.EncyclopediaOrNull();
             if (enc == null) enc = UnityEngine.Object.FindObjectOfType<Encyclopedia>();
             if (enc == null)
             {

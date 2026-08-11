@@ -28,6 +28,52 @@ namespace RocketPod
             }
         }
 
+        private static IEnumerable<string> NamesOf(WeaponManager wm)
+        {
+            if (!string.IsNullOrEmpty(wm.name)) yield return wm.name;
+
+            Transform? root = wm.transform != null ? wm.transform.root : null;
+            if (root != null && !string.IsNullOrEmpty(root.name)) yield return root.name;
+
+            UnitDefinition? def = root != null ? root.GetComponent<Unit>()?.definition : null;
+            if (def == null) yield break;
+            if (!string.IsNullOrEmpty(def.unitName)) yield return def.unitName;
+            if (!string.IsNullOrEmpty(def.code)) yield return def.code;
+            if (!string.IsNullOrEmpty(def.name)) yield return def.name;
+        }
+
+        private static string Normalize(string s)
+        {
+            var sb = new System.Text.StringBuilder(s.Length);
+            foreach (char c in s)
+                if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c));
+            return sb.ToString();
+        }
+
+        private static bool Resolve(string name, Dictionary<string, WeaponManager> managers,
+                                    List<WeaponManager> all, out WeaponManager found,
+                                    out string how)
+        {
+            how = "";
+            if (managers.TryGetValue(name, out found)) return true;
+
+            string want = Normalize(name);
+            if (want.Length == 0) return false;
+
+            foreach (WeaponManager wm in all)
+            {
+                foreach (string candidate in NamesOf(wm))
+                {
+                    if (!Normalize(candidate).Contains(want)) continue;
+                    found = wm;
+                    how = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         internal static void Apply(bool force = false)
         {
             if (_applied && !force) return;
@@ -47,12 +93,14 @@ namespace RocketPod
 
             var managers = new Dictionary<string, WeaponManager>(
                 System.StringComparer.OrdinalIgnoreCase);
+            var all = new List<WeaponManager>();
             foreach (WeaponManager wm in Resources.FindObjectsOfTypeAll<WeaponManager>())
             {
                 string? root = wm.transform != null && wm.transform.root != null
                     ? wm.transform.root.name : null;
                 if (!string.IsNullOrEmpty(root)) managers[root!] = wm;
                 if (!managers.ContainsKey(wm.name)) managers[wm.name] = wm;
+                all.Add(wm);
             }
 
             int attached = 0, alreadyThere = 0;
@@ -75,12 +123,20 @@ namespace RocketPod
                 string name = entry.Substring(0, colon).Trim();
                 string idxPart = entry.Substring(colon + 1).Trim();
 
-                if (!managers.TryGetValue(name, out WeaponManager wm))
+                if (!Resolve(name, managers, all, out WeaponManager wm, out string how))
                 {
 
                     missing.Add(name);
                     continue;
                 }
+
+                if (how.Length > 0)
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] ExtraHardpoints: '{name}' is not a WeaponManager key, so it was " +
+                        $"matched by name against {DescribeAircraft(wm.name, wm)} (on \"{how}\"). " +
+                        "Modded aircraft keep their key inside a compressed bundle, so naming one " +
+                        "is the only way to reach it - check the quoted name is the aircraft you " +
+                        "meant.");
 
                 HardpointSet[]? sets = wm.hardpointSets;
                 if (sets == null || sets.Length == 0) continue;

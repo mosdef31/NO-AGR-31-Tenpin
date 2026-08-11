@@ -48,7 +48,7 @@ namespace RocketPod
             try
             {
                 Encyclopedia? enc = null;
-                try { enc = Encyclopedia.i; } catch {  }
+                enc = GameData.EncyclopediaOrNull();
                 if (enc?.missiles == null) return;
 
                 var rows = new List<Row>();

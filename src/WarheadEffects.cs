@@ -145,12 +145,10 @@ namespace RocketPod
         private static object? FindDonor(FieldInfo fWarhead, FieldInfo[] fields, out string donorName)
         {
             donorName = "(none)";
-            Encyclopedia? enc = null;
-            try { enc = Encyclopedia.i; } catch {  }
+            Encyclopedia? enc = GameData.EncyclopediaOrNull();
             if (enc?.missiles == null) return null;
 
-            object? best = null;
-            int bestScore = -1;
+            var usable = new List<Candidate>();
 
             foreach (MissileDefinition d in enc.missiles)
             {
@@ -163,24 +161,56 @@ namespace RocketPod
                 object? w = fWarhead.GetValue(m);
                 if (w == null) continue;
 
-                int score = fields.Count(f => f.GetValue(w) as GameObject != null);
-                if (score == 0) continue;
+                int set = fields.Count(f => f.GetValue(w) as GameObject != null);
+                if (set == 0) continue;
 
-                string name = d.unitName ?? string.Empty;
-                if (name.IndexOf("AGR", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    score += 10;
-                }
-
-                if (score > bestScore)
-                {
-                    bestScore = score;
-                    best = w;
-                    donorName = string.IsNullOrEmpty(name) ? d.name : name;
-                }
+                usable.Add(new Candidate(d, w, set));
             }
 
-            return best;
+            if (usable.Count == 0) return null;
+
+            if (DonorPreference.TryBest(usable, c => c.MatchKey,
+                                        Plugin.WarheadEffectDonor.Value,
+                                        out Candidate preferred, out string why))
+            {
+                donorName = $"{preferred.Name} ({why})";
+                return preferred.Warhead;
+            }
+
+            Candidate fallback = usable
+                .OrderByDescending(c => c.Set +
+                    (c.MatchKey.IndexOf("AGR", StringComparison.OrdinalIgnoreCase) >= 0 ? 10 : 0))
+                .First();
+
+            Plugin.Log.LogWarning(
+                $"[Tenpin] No warhead effect donor matched any of " +
+                $"'{Plugin.WarheadEffectDonor.Value}', so '{fallback.Name}' was chosen " +
+                "automatically. That is the old behaviour and it is what read as a weak " +
+                "detonation. Candidate names are the missiles listed by the effect donor scan.");
+
+            donorName = fallback.Name;
+            return fallback.Warhead;
+        }
+
+        private sealed class Candidate
+        {
+            internal Candidate(MissileDefinition def, object warhead, int set)
+            {
+                Def = def;
+                Warhead = warhead;
+                Set = set;
+            }
+
+            internal MissileDefinition Def { get; }
+            internal object Warhead { get; }
+
+            internal int Set { get; }
+
+            internal string MatchKey => $"{Def.jsonKey} {Def.unitName}";
+
+            internal string Name =>
+                !string.IsNullOrEmpty(Def.unitName) ? Def.unitName :
+                !string.IsNullOrEmpty(Def.jsonKey) ? Def.jsonKey : Def.name;
         }
     }
 }

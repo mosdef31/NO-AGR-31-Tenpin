@@ -97,9 +97,14 @@ The asset bundle ships inside the DLL. There is no separate `.nobp`.
 
 ## Configuration
 
-`BepInEx/config/com.tenpin.cfg`, written on first run. Fourteen keys, eight of them the
+`BepInEx/config/com.tenpin.cfg`, written on first run. Fifteen keys, eight of them the
 HUD. Everything under `[Advanced]` is a diagnostic dump, defaults to off, and changes
 nothing about how the weapon flies.
+
+`[Effects] Fun effects` is the one taste key. Off, the pod uses the game's own rocket
+effects. On, it uses the set authored for this weapon - the cyan plume, the ember burst
+and the flash at the tube. It is deliberately over the top, which is why it is opt-in. It
+changes the look only; the pod sounds the same either way.
 
 Full table: [`CONFIG.md`](./CONFIG.md).
 
@@ -113,15 +118,16 @@ If you tested a pre-release build, delete the old `.cfg` and let it regenerate.
 - **Helicopters are the weakest carrier.** 0.9.0 scales the guidance budget and the
   pipper smoothing by launch speed, which fixes the part that read as broken. A hover
   still has very little reach.
-- **Effects are borrowed** from stock rockets at runtime, because the bundle's slots are
-  empty. Sized for the donor's yield, so the detonation reads weak.
+- **The detonation effect is borrowed** from a stock AGR at runtime and is sized for that
+  warhead rather than this one, so the impact reads weaker than the round is. The motor
+  plume, the smoke trail and the launch flash have an authored version behind
+  `Fun effects`; the warhead has none either way.
 - **Multiplayer is untested.** `PrefabHash` consistency across clients has never been
   checked. Largest unknown in the mod.
 - **The heavy's silhouette is stubby**, 4.18:1 against the light's 6.45, because both
   share a length driven by the 2 m round.
-- **The heavy's launch transforms have never been fired.** All nineteen resolve against
-  real transforms; no round has left one.
-- **Blast may be too weak.** 22.5 rests on judgement rather than a stock reference.
+- **Blast may be too weak.** 22.5 rests on judgement rather than a stock reference, and it
+  cannot be raised far while the detonation effect is borrowed - see above.
 
 ## Attribution
 

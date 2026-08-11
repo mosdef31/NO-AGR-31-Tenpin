@@ -164,7 +164,7 @@ namespace RocketPod
         private static void Damage()
         {
             Encyclopedia? enc = null;
-            try { enc = Encyclopedia.i; } catch {  }
+            enc = GameData.EncyclopediaOrNull();
             if (enc?.missiles == null) return;
 
             var rows = new List<(string Key, float Mass, float Blast, float Pierce)>();

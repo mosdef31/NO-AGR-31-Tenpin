@@ -246,7 +246,8 @@ namespace RocketPod.Ballistics
             MissileDefinition? def = null;
             var available = new List<string>();
 
-            foreach (MissileDefinition candidate in Encyclopedia.i?.missiles ?? new List<MissileDefinition>())
+            foreach (MissileDefinition candidate in
+                     GameData.EncyclopediaOrNull()?.missiles ?? new List<MissileDefinition>())
             {
                 if (candidate == null)
                 {
