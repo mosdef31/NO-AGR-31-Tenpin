@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.2 - 2026-08-12
+
+- Fixed the pods and rockets rendering bright pink for some players. The mod was shipping
+  its own copy of the shader the pod is drawn with, built for one machine's graphics
+  settings, and anyone whose machine differed got no usable version of it. The pod now
+  uses the game's own copy, which every machine already has. Reported on Linux and Steam
+  Deck in particular.
+
 ## 0.9.1 - 2026-08-12
 
 - Rockets in flight had no map icon, which the game drew as a big filled square - so a
