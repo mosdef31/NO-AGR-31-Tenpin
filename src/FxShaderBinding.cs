@@ -56,7 +56,7 @@ namespace RocketPod
             }
 
             int rebound = 0, already = 0;
-            foreach (Material m in OurLitMaterials().Distinct())
+            foreach (Material m in OurBodyMaterials().Distinct())
             {
                 if (ReferenceEquals(m.shader, stock)) { already++; continue; }
                 m.shader = stock;
@@ -66,13 +66,14 @@ namespace RocketPod
             if (rebound == 0 && already == 0) return;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Lit rebind: {rebound} material(s) moved onto the game's own " +
-                $"'{stock.name}' from {from}, {already} already on it. The bundle ships its own copy " +
-                "of this shader with only the variants it was built with, which renders magenta on a " +
-                "machine using a different graphics API. Rebinding is what fixes the pink pod.");
+                $"[Tenpin] Lit bind: {rebound} body material(s) put on the game's own " +
+                $"'{stock.name}' from {from}, {already} already on it. A bundle that ships its own " +
+                "copy of this shader carries only the variants it was built with and renders magenta " +
+                "on a machine using a different graphics API, which is the pink pod. Since the " +
+                "2026-08-12 export the bundle ships no shader here at all and these arrive null.");
         }
 
-        private static IEnumerable<Material> OurLitMaterials()
+        private static IEnumerable<Material> OurBodyMaterials()
         {
             foreach (GameObject root in OurPrefabs())
             {
@@ -82,8 +83,8 @@ namespace RocketPod
                     if (r == null || r is ParticleSystemRenderer) continue;
                     foreach (Material m in r.sharedMaterials)
                     {
-                        if (m == null || m.shader == null) continue;
-                        if (m.shader.name == LitShader) yield return m;
+                        if (m == null) continue;
+                        if (NeedsShader(m) || m.shader.name == LitShader) yield return m;
                     }
                 }
             }

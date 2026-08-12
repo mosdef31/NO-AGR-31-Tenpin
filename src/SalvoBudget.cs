@@ -56,6 +56,58 @@ namespace RocketPod
             }
         }
 
+        private const float SmokeSizeScale = 0.3f;
+
+        private const float SmokeLifetimeScale = 0.2f;
+
+        private const float SmokeRateScale = 0.85f;
+
+        private const float SmokeAlphaScale = 0.45f;
+
+        private const int MaxParticlesPerTrail = 64;
+
+        internal static void ApplySmokeTrim(IEnumerable<ParticleSystem> trailSystems)
+        {
+            foreach (ParticleSystem ps in trailSystems)
+            {
+                if (ps == null) continue;
+
+                ParticleSystem.MainModule main = ps.main;
+                main.startSizeMultiplier *= SmokeSizeScale;
+                main.startLifetimeMultiplier *= SmokeLifetimeScale;
+
+                Color c = main.startColor.color;
+                c.a *= SmokeAlphaScale;
+                main.startColor = c;
+
+                main.maxParticles = Mathf.Min(main.maxParticles, MaxParticlesPerTrail);
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTimeMultiplier *= SmokeRateScale;
+                emission.rateOverDistanceMultiplier *= SmokeRateScale;
+
+                DisableModule(ps.collision);
+                DisableModule(ps.lights);
+                DisableModule(ps.trails);
+                DisableModule(ps.subEmitters);
+                DisableModule(ps.noise);
+
+                var r = ps.GetComponent<ParticleSystemRenderer>();
+                if (r != null)
+                {
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    r.receiveShadows = false;
+                    r.allowRoll = false;
+                }
+            }
+        }
+
+        private static void DisableModule(ParticleSystem.CollisionModule m) => m.enabled = false;
+        private static void DisableModule(ParticleSystem.LightsModule m) => m.enabled = false;
+        private static void DisableModule(ParticleSystem.TrailModule m) => m.enabled = false;
+        private static void DisableModule(ParticleSystem.SubEmittersModule m) => m.enabled = false;
+        private static void DisableModule(ParticleSystem.NoiseModule m) => m.enabled = false;
+
         internal static bool TryTakeVoice(Missile round)
         {
             if (round == null) return false;

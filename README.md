@@ -74,6 +74,35 @@ will be, how far you can reach, and turns the cue green when you should fire.
 because a lofted shot puts the marks low on the screen right when you need to read them
 carefully. Locking a unit overrides whatever you designated on the ground.
 
+**Targets on a hilltop are worth one extra habit.** The cue is honest about where the
+rockets meet the ground, and on a peak that answer moves a long way for a small change of
+attitude - a shot that clears the summit lands in the valley behind it. Rather than
+hunting for the perfect release, fire on the cue and keep firing as the nose comes down
+through it. The salvo walks up the slope onto the target and something in it connects.
+That is what a saturation weapon is for.
+
+## Help with the shot
+
+Two settings that make a long shot easier to fly. They are meant to be used together.
+
+**Release assist**, on by default. Designate a point, hold the trigger, and the pod fires
+itself the moment the rockets will actually land there, instead of you judging it by eye.
+Holding the trigger is what gives permission: nothing fires unless you are already holding
+it, and letting go stops it at once. With nothing designated, or a target out of reach, the
+trigger works exactly as it always has, so a gun run is unaffected. **U** turns it off and
+on in flight, and the HUD reads AUTO while it is holding the trigger for you.
+
+**Tilt assist**, off by default. You fly the heading, the pod flies the elevation. It adds
+a small amount of pitch to bring the rockets onto the range you need, so lining up at 15 km
+is a matter of pointing at the target rather than hunting for the right loft. Your own
+stick is added on top and is never limited, so you can override it whenever you like.
+
+Enable it in the settings, then arm it in flight with **Y**. The HUD reads TILT ARMED when
+it is on and TILT while it is actually flying the shot. It only works once you are already
+pointed roughly at what you designated, within about 30 degrees, so turning onto a target
+is your own turn and it does not fight you on the way round. Raise `Tilt assist authority`
+if it settles too slowly for you.
+
 ## What carries it
 
 The A-19 out of the box, plus the SAH-46 Chicane, UH-90 Ibis, T/A-30 Compass and VT-7
@@ -103,8 +132,8 @@ end up flying new code against old assets.
 
 ## Settings
 
-`BepInEx/config/com.tenpin.cfg`, created the first time you run it. Fifteen settings,
-eight of which are the HUD. The `[Advanced]` block is diagnostic logging, off by default,
+`BepInEx/config/com.tenpin.cfg`, created the first time you run it. Twenty-two settings:
+eleven are the HUD, four are the aiming help above, and the rest are diagnostics. The `[Advanced]` block is diagnostic logging, off by default,
 and none of it changes how the weapon flies.
 
 One worth knowing about: **`Fun effects`**. Off, the rockets use the game's own effects.

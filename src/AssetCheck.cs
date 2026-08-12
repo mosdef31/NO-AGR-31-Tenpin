@@ -41,6 +41,8 @@ namespace RocketPod
                       "correctly until they are fixed in Unity and the bundle re-exported.");
         }
 
+        private const string BaseMap = "_BaseMap";
+
         private static void CheckShaders(Renderer[] renderers, List<string> ok, List<string> fail)
         {
             var bad = new List<string>();
@@ -70,6 +72,13 @@ namespace RocketPod
                     else
                     {
                         good.Add($"'{m.name}'/{s.name}");
+
+                        if (!(r is ParticleSystemRenderer) &&
+                            m.HasProperty(BaseMap) && m.GetTexture(BaseMap) == null)
+                        {
+                            bad.Add($"'{m.name}' is on '{s.name}' but has NO base map bound, " +
+                                    "so it renders as flat white");
+                        }
                     }
                 }
             }
@@ -79,7 +88,10 @@ namespace RocketPod
                 fail.Add($"{string.Join("; ", bad.ToArray())}. This game renders with URP, which has " +
                          "no pass for a built-in shader, so the mesh is not drawn at all - the pod " +
                          "is invisible while everything else about it works. Set the material's " +
-                         "shader to 'Universal Render Pipeline/Lit' in Unity and re-export.");
+                         "shader to 'Universal Render Pipeline/Lit' in Unity and re-export. If the " +
+                         "complaint is a MISSING BASE MAP rather than a shader, the material reached " +
+                         "the bundle without its textures bound - see the body-strip note in the " +
+                         "Unity project's TenpinEffects.cs.");
             }
             else if (good.Count > 0)
             {

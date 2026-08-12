@@ -191,6 +191,8 @@ namespace RocketPod
             SalvoBudget.ApplyEmissionScale(particles, scale);
             SalvoBudget.ApplyEmissionScale(trailOwned, scale);
 
+            SalvoBudget.ApplySmokeTrim(trailOwned);
+
             PlumeTint.Describe(donor.Key, particles);
             PlumeTint.Apply(particles);
 

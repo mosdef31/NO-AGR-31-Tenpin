@@ -40,6 +40,12 @@ namespace RocketPod
         public static ConfigEntry<bool> HudHideWithGear { get; private set; } = null!;
         public static ConfigEntry<bool> HudCockpitOnly { get; private set; } = null!;
 
+        public static ConfigEntry<bool> ReleaseAssist { get; private set; } = null!;
+        public static ConfigEntry<KeyCode> ReleaseAssistKey { get; private set; } = null!;
+        public static ConfigEntry<bool> TiltAssist { get; private set; } = null!;
+        public static ConfigEntry<KeyCode> TiltAssistKey { get; private set; } = null!;
+        public static ConfigEntry<float> TiltAssistAuthority { get; private set; } = null!;
+
         public static ConfigEntry<bool> FunEffectsEnabled { get; private set; } = null!;
 
         public static ConfigEntry<bool> DumpTuningReadout { get; private set; } = null!;
@@ -195,6 +201,9 @@ namespace RocketPod
 
                 _harmony.PatchAll(typeof(Kinematics_GetBallisticAimPoint_FlightTimePatch));
 
+                _harmony.PatchAll(typeof(WeaponManager_Fire_ReleaseAssistPatch));
+                _harmony.PatchAll(typeof(PilotPlayerState_PlayerAxisControls_TiltAssistPatch));
+
                 _harmony.PatchAll(typeof(UnitMapIcon_SetIcon_RoundIconPatch));
 
                 gameObject.AddComponent<AssetCheckRunner>();
@@ -208,6 +217,20 @@ namespace RocketPod
 
                     BallisticsCheck.Install(_harmony);
                     gameObject.AddComponent<BallisticsRunner>();
+                }
+
+                try
+                {
+                    using System.IO.Stream? bundle = typeof(Plugin).Assembly
+                        .GetManifestResourceStream(PluginInfo.BundleName);
+                    Log.LogInfo(bundle == null
+                        ? "[RocketPod] No embedded bundle in this DLL, which is a packaging fault."
+                        : $"[RocketPod] Embedded bundle: {bundle.Length:N0} bytes. If a Unity " +
+                          "re-export is not showing up in game, check this number changed.");
+                }
+                catch (Exception ex)
+                {
+                    Log.LogWarning($"[RocketPod] Could not measure the embedded bundle: {ex.Message}");
                 }
 
                 Log.LogInfo($"[RocketPod] Loaded v{PluginInfo.Version}. " +
@@ -335,6 +358,64 @@ namespace RocketPod
                     null,
                     new ConfigurationManagerAttributes { Order = 30 }));
 
+            ReleaseAssist = Config.Bind(
+                "Assist", "Release assist", true,
+                new ConfigDescription(
+                    "Hold the trigger and the pod fires itself the moment the rockets will land on " +
+                    "the point you designated, instead of you judging the release by eye. Holding " +
+                    "the trigger is the consent - nothing fires unless you are already holding it, " +
+                    "and letting go always stops it. It only ever delays a shot you aimed at " +
+                    "something: with no designation, or a target out of reach, or the HUD hidden, " +
+                    "the trigger behaves exactly as it does now. Once a salvo starts it stays open " +
+                    "for the whole ripple.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 43 }));
+
+            TiltAssist = Config.Bind(
+                "Assist", "Tilt assist", false,
+                new ConfigDescription(
+                    "Fly the heading and let the pod fly the elevation. While the pod is selected " +
+                    "and you have a point designated, this adds pitch to bring the rockets onto the " +
+                    "range you need, so lining up a long shot is a matter of pointing at the target " +
+                    "rather than finding the loft by hand. Your own stick input is added on top and " +
+                    "is never capped, so you can overpower it at any moment, and it does nothing at " +
+                    "all with no designation. OFF by default because it changes how the aircraft " +
+                    "flies.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 42 }));
+
+            ReleaseAssistKey = Config.Bind(
+                "Assist", "ReleaseAssistKey", KeyCode.U,
+                new ConfigDescription(
+                    "Turns the release assist on and off in flight, so a shot that wants taking by " +
+                    "hand does not need a trip to the settings. Unlike the tilt assist this one " +
+                    "starts every sortie ON, matching its setting - it only ever delays a shot you " +
+                    "aimed at something you designated, so having it on is the safe state. The HUD " +
+                    "says AUTO while it is armed.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 44 }));
+
+            TiltAssistKey = Config.Bind(
+                "Assist", "TiltAssistKey", KeyCode.Y,
+                new ConfigDescription(
+                    "Arms and disarms the tilt assist in flight. It starts every sortie disarmed, " +
+                    "because something that moves the aircraft should be switched on deliberately " +
+                    "rather than found already running. The HUD shows TILT ARMED when it is on and " +
+                    "TILT when it is actually flying the shot.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 41 }));
+
+            TiltAssistAuthority = Config.Bind(
+                "Assist", "Tilt assist authority", 0.30f,
+                new ConfigDescription(
+                    "How much of the pitch axis the tilt assist is allowed to use, as a fraction. " +
+                    "0.30 is just under a third of full deflection, which settles a long shot in a " +
+                    "couple of seconds and is still far too little to fight you for the aircraft - " +
+                    "your own stick is added on top and is never limited. It was 0.10 and was too " +
+                    "weak to be useful. Raise it if it still settles too slowly for you.",
+                    new AcceptableValueRange<float>(0f, 1f),
+                    new ConfigurationManagerAttributes { Order = 41 }));
+
             FunEffectsEnabled = Config.Bind(
                 "Effects", "Fun effects", false,
                 new ConfigDescription(
@@ -433,6 +514,10 @@ namespace RocketPod
                 ExtraHardpoints.Apply();
 
                 FxShaderBinding.RunOnce();
+
+                TextureRescue.RunOnce();
+
+                UnifiedStation.RunOnce();
 
                 WarheadEffects.RunOnce();
                 AssetCheck.RunOnce();

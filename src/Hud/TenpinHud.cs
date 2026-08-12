@@ -42,8 +42,79 @@ namespace RocketPod.Hud
 
         private HudMode _mode = HudMode.Direct;
 
+        internal struct Firing
+        {
+
+            public bool Valid;
+
+            public bool OnTarget;
+
+            public float Miss;
+
+            public float RangeError;
+
+            public float Tolerance;
+
+            public bool InReach;
+
+            public float BearingOff;
+
+            public float Time;
+
+            public bool Fresh => Valid && UnityEngine.Time.time - Time < 0.25f;
+        }
+
+        internal static Firing Solution;
+
+        private static void PublishSolution(bool onTarget, bool inReach, float miss,
+                                            float rangeError, float tolerance,
+                                            Aircraft aircraft, Vector3 launch, Vector3 target)
+        {
+            Solution = new Firing
+            {
+                Valid = true,
+                OnTarget = onTarget,
+                InReach = inReach,
+                Miss = miss,
+                RangeError = rangeError,
+                Tolerance = tolerance,
+                BearingOff = BearingOff(aircraft, launch, target),
+                Time = Time.time,
+            };
+        }
+
+        private static float BearingOff(Aircraft aircraft, Vector3 launch, Vector3 target)
+        {
+            Vector3 toTarget = target - launch;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 1e-6f) return 0f;
+
+            Vector3 nose = aircraft.transform.forward;
+            nose.y = 0f;
+            if (nose.sqrMagnitude < 1e-6f) return 0f;
+
+            return Vector3.Angle(nose, toTarget);
+        }
+
+        private static float SignedRangeError(Vector3 launch, Vector3 impact, Vector3 target)
+        {
+            Vector3 toTarget = target - launch;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 1e-6f) return 0f;
+
+            Vector3 axis = toTarget.normalized;
+            Vector3 toImpact = impact - launch;
+            toImpact.y = 0f;
+
+            return Vector3.Dot(toImpact, axis) - toTarget.magnitude;
+        }
+
         private Vector3 _impactSmoothed;
         private bool _hasImpact;
+
+        private bool _designationHasHeight;
+
+        private bool _presentable = true;
 
         private TrajectorySolver.RoundSpec? _spec;
         private Missile? _specSource;
@@ -118,8 +189,17 @@ namespace RocketPod.Hud
                 }
 
                 if (Input.GetKeyDown(Plugin.HudModeKey.Value)) ToggleMode();
+
+                if (Plugin.TiltAssist.Value && Input.GetKeyDown(Plugin.TiltAssistKey.Value))
+                    PilotPlayerState_PlayerAxisControls_TiltAssistPatch.Toggle();
+
+                if (Input.GetKeyDown(Plugin.ReleaseAssistKey.Value))
+                    WeaponManager_Fire_ReleaseAssistPatch.Toggle();
+
                 HandleDesignateInput();
                 Draw();
+
+                if (!_presentable) HideVisuals();
 
                 DrawMapMarker();
             }
@@ -162,19 +242,7 @@ namespace RocketPod.Hud
             Vector3 velocity = inherited + aircraft.transform.forward * EjectionSpeed(station);
 
             float step = Mathf.Max(1f, Plugin.HudStepScale.Value);
-            TrajectorySolver.Result r = TrajectorySolver.Integrate(
-                spec, launch, velocity, groundY: 0f, wind: default, stepScale: step);
-
-            if (r.Hit && Plugin.SampleTerrainHeight.Value)
-            {
-                float groundY = AimpointChannel.SampleGroundHeightPublic(r.ImpactPoint);
-                if (groundY > 0.5f)
-                {
-                    TrajectorySolver.Result onTerrain = TrajectorySolver.Integrate(
-                        spec, launch, velocity, groundY: groundY, wind: default, stepScale: step);
-                    if (onTerrain.Hit) r = onTerrain;
-                }
-            }
+            TrajectorySolver.Result r = ImpactOnTerrain(spec, launch, velocity, step);
 
             if (!r.Hit) { Hide(); return; }
 
@@ -215,6 +283,11 @@ namespace RocketPod.Hud
             _vec.End();
         }
 
+        private static TrajectorySolver.Result ImpactOnTerrain(
+            TrajectorySolver.RoundSpec spec, Vector3 launch, Vector3 velocity, float step) =>
+            TerrainImpact.Solve(spec, launch, velocity, step,
+                                AimpointChannel.TrySampleGroundHeight);
+
         private void DrawDirect(Camera cam, Vector2 pip, Vector3 world, float cep,
                                 Color hud, float px, TrajectorySolver.Result r,
                                 WeaponStation station, Aircraft aircraft,
@@ -231,10 +304,7 @@ namespace RocketPod.Hud
 
             if (designated)
             {
-                float groundY = Plugin.SampleTerrainHeight.Value
-                    ? Mathf.Max(0f, AimpointChannel.SampleGroundHeightPublic(dtarget))
-                    : 0f;
-                dtarget.y = groundY;
+                dtarget.y = TargetHeight(dtarget);
 
                 Vector3 miss = r.ImpactPoint - dtarget;
                 miss.y = 0f;
@@ -245,7 +315,12 @@ namespace RocketPod.Hud
 
                 float maxRange = MaxRangeThrottled(spec, launch, aircraft, velocity);
                 inReach = maxRange <= 0f || flat.magnitude <= maxRange;
-                onTarget = inReach && missDist <= ReleaseTolerance(cep, _designationRadius);
+                float tol = ReleaseTolerance(cep, _designationRadius);
+                onTarget = inReach && missDist <= tol;
+
+                PublishSolution(onTarget, inReach, missDist,
+                                SignedRangeError(launch, r.ImpactPoint, dtarget), tol,
+                                aircraft, launch, dtarget);
 
                 cue = onTarget ? FireCue(hud) : inReach ? hud : Warn(hud);
             }
@@ -298,6 +373,7 @@ namespace RocketPod.Hud
             SetText(ref i2, pip + new Vector2(20f * px, -14f * px), $"ToF {r.TimeOfFlight:0.0}", cue, px);
             SetText(ref i2, pip + new Vector2(20f * px, -30f * px), $"CEP {cep:0}", Fade(hud, 0.75f), px);
             SetText(ref i2, org, "AGR-31 CCIP", hud, px);
+            TiltIndicator(ref i2, org, hud, px);
             SetText(ref i2, org - new Vector2(0f, 18f * px),
 
                     $"RDY {station.Ammo}  RPL {station.FullAmmo}", Fade(hud, 0.75f), px);
@@ -332,6 +408,7 @@ namespace RocketPod.Hud
             SetText(ref i2, new Vector2(left, top - 18f * px),
 
                     $"RDY {station.Ammo}  RPL {station.FullAmmo}", Fade(hud, 0.75f), px);
+            TiltIndicator(ref i2, new Vector2(left, top), hud, px);
 
             float maxRange = MaxRangeThrottled(spec, launch, aircraft, velocity);
 
@@ -339,10 +416,7 @@ namespace RocketPod.Hud
 
             if (designated)
             {
-                float groundY = Plugin.SampleTerrainHeight.Value
-                    ? Mathf.Max(0f, AimpointChannel.SampleGroundHeightPublic(target))
-                    : 0f;
-                target.y = groundY;
+                target.y = TargetHeight(target);
 
                 Vector3 flat = target - launch;
                 flat.y = 0f;
@@ -354,6 +428,10 @@ namespace RocketPod.Hud
                 float tolerance = ReleaseTolerance(cep, _designationRadius);
                 bool inReach = maxRange > 0f && rangeToTarget <= maxRange;
                 bool onTarget = inReach && missDist <= tolerance;
+
+                PublishSolution(onTarget, inReach, missDist,
+                                SignedRangeError(launch, r.ImpactPoint, target), tolerance,
+                                aircraft, launch, target);
 
                 Color cue = onTarget ? FireCue(hud) : hud;
 
@@ -427,6 +505,45 @@ namespace RocketPod.Hud
             HideTextsFrom(i2);
         }
 
+        private float TargetHeight(Vector3 target)
+        {
+            if (_designationHasHeight)
+            {
+
+                if (Plugin.SampleTerrainHeight.Value &&
+                    Mathf.Abs(target.y - _lastLoggedHeight) > 25f)
+                {
+                    _lastLoggedHeight = target.y;
+                    bool got = AimpointChannel.TrySampleGroundHeight(target, out float ground);
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] Locked target sits at {target.y:F0} m; the ground sample under it " +
+                        (got ? $"reads {ground:F0} m" : "FAILED and would have read 0 m") +
+                        $". Aiming at the unit's own height, {Mathf.Abs(target.y - (got ? ground : 0f)):F0} m " +
+                        "from where this used to aim.");
+                }
+
+                return target.y;
+            }
+
+            if (!Plugin.SampleTerrainHeight.Value) return 0f;
+
+            if (AimpointChannel.TrySampleGroundHeight(target, out float h)) return h;
+
+            if (!_loggedSampleFail)
+            {
+                _loggedSampleFail = true;
+                Plugin.Log.LogWarning(
+                    "[Tenpin] The ground under the designated point could not be sampled, so its " +
+                    "height is left as it was rather than dropped to sea level. Dropping it is what " +
+                    "used to put the salvo past a target on high ground. Logged once.");
+            }
+
+            return target.y;
+        }
+
+        private bool _loggedSampleFail;
+        private float _lastLoggedHeight = float.NegativeInfinity;
+
         private bool TryGetDesignation(Aircraft aircraft, WeaponStation station, out Vector3 target)
         {
             target = default;
@@ -438,12 +555,16 @@ namespace RocketPod.Hud
                 target = locked.transform.GlobalPosition().AsVector3();
 
                 _designationRadius = Mathf.Max(0f, locked.maxRadius);
+
+                _designationHasHeight = true;
                 return true;
             }
 
             if (_hasGroundDesignation)
             {
+
                 target = _groundDesignation;
+                _designationHasHeight = false;
                 return true;
             }
             return false;
@@ -834,6 +955,27 @@ namespace RocketPod.Hud
 
         private const float BlockWidth = 330f;
 
+        private void TiltIndicator(ref int i, Vector2 org, Color hud, float px)
+        {
+            var parts = new List<string>(2);
+            bool live = false;
+
+            if (WeaponManager_Fire_ReleaseAssistPatch.Armed) parts.Add("AUTO");
+
+            if (Plugin.TiltAssist.Value &&
+                PilotPlayerState_PlayerAxisControls_TiltAssistPatch.Armed)
+            {
+                live = PilotPlayerState_PlayerAxisControls_TiltAssistPatch.Engaged;
+                parts.Add(live ? "TILT" : "TILT ARMED");
+            }
+
+            if (parts.Count == 0) return;
+
+            SetText(ref i, org + new Vector2(0f, 18f * px),
+                    string.Join("  ", parts.ToArray()),
+                    live ? FireCue(hud) : Fade(hud, 0.6f), px);
+        }
+
         private static Vector2 PanelOrigin(float px)
         {
             float margin = 40f * px;
@@ -967,10 +1109,14 @@ namespace RocketPod.Hud
             if (ws.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return false;
             if (ws.Ammo <= 0) return false;
 
-            if (Plugin.HudHideWithGear.Value && hud.aircraft.gearDeployed) return false;
+            _presentable = true;
+
+            if (Plugin.HudHideWithGear.Value && hud.aircraft.gearDeployed)
+                _presentable = false;
 
             if (Plugin.HudCockpitOnly.Value &&
-                CameraStateManager.cameraMode != CameraMode.cockpit) return false;
+                CameraStateManager.cameraMode != CameraMode.cockpit)
+                _presentable = false;
 
             aircraft = hud.aircraft;
             station = ws;
@@ -1094,8 +1240,14 @@ namespace RocketPod.Hud
 
         private void Hide()
         {
+            Solution.Valid = false;
             _hasImpact = false;
             _mapMarker.Hide();
+            HideVisuals();
+        }
+
+        private void HideVisuals()
+        {
             if (_vec != null)
             {
                 _vec.Begin();

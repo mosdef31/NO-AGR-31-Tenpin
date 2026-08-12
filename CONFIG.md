@@ -37,6 +37,16 @@ does not remove keys a new version stopped binding, so an old file keeps 43 dead
 | `HideWithGear` | true |  | Hide the weapon HUD while the landing gear is down, which is what every stock weapon HUD does. |
 | `CockpitOnly` | true |  | Hide the HUD on the external cameras. Ours is drawn to a screen-space overlay canvas of our own, so unlike the stock HUD - which lives on the cockpit glass and simply is not in shot from outside - nothing hides it for us, and it would otherwise float over an orbit or chase view. |
 
+## Assist
+
+| Key | Default | | Effect |
+|---|---|---|---|
+| `Release assist` | true |  | Hold the trigger and the pod fires itself the moment the rockets will land on the point you designated, instead of you judging the release by eye. Holding the trigger is the consent - nothing fires unless you are already holding it, and letting go always stops it. It only ever delays a shot you aimed at something: with no designation, or a target out of reach, or the HUD hidden, the trigger behaves exactly as it does now. Once a salvo starts it stays open for the whole ripple. |
+| `ReleaseAssistKey` | KeyCode.U |  | Turns the release assist on and off in flight, so a shot that wants taking by hand does not need a trip to the settings. Unlike the tilt assist this one starts every sortie ON, matching its setting - it only ever delays a shot you aimed at something you designated, so having it on is the safe state. The HUD says AUTO while it is armed. |
+| `Tilt assist` | false |  | Fly the heading and let the pod fly the elevation. While the pod is selected and you have a point designated, this adds pitch to bring the rockets onto the range you need, so lining up a long shot is a matter of pointing at the target rather than finding the loft by hand. Your own stick input is added on top and is never capped, so you can overpower it at any moment, and it does nothing at all with no designation. OFF by default because it changes how the aircraft flies. |
+| `TiltAssistKey` | KeyCode.Y |  | Arms and disarms the tilt assist in flight. It starts every sortie disarmed, because something that moves the aircraft should be switched on deliberately rather than found already running. The HUD shows TILT ARMED when it is on and TILT when it is actually flying the shot. |
+| `Tilt assist authority` | 0.30 |  | How much of the pitch axis the tilt assist is allowed to use, as a fraction. 0.30 is just under a third of full deflection, which settles a long shot in a couple of seconds and is still far too little to fight you for the aircraft - your own stick is added on top and is never limited. It was 0.10 and was too weak to be useful. Raise it if it still settles too slowly for you. |
+
 ## Effects
 
 | Key | Default | | Effect |

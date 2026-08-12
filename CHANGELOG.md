@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.0.0 - 2026-08-12
+
+- **Release assist**, on by default, and **U** switches it off and on in flight. The HUD
+  reads AUTO while it is holding the trigger for you. Designate a point, hold the trigger,
+  and the pod fires itself when the rockets will land there, then stops when you drift off.
+  Holding the trigger is the permission - nothing fires unless you are already holding it,
+  and letting go stops it. With nothing designated the trigger behaves exactly as before,
+  so gun runs are unaffected.
+- **Tilt assist**, off by default. You fly the heading and the pod flies the elevation,
+  adding a little pitch to bring the rockets onto the range you need. Enable it in the
+  settings and arm it in flight with **Y**; the HUD shows TILT ARMED when it is on and
+  TILT while it is working. It only acts once you are pointed roughly at the target, and
+  it does nothing while the map is open. Your own stick is added on top and is never
+  limited. `Tilt assist authority` sets how much it may use.
+- Carrying both pod sizes now gives you one weapon instead of two. They ripple together
+  across everything you are carrying rather than having to be selected separately. They
+  are still listed and priced separately in the loadout.
+- Aiming at anything on high ground is fixed, both the cue and the rockets. The cue used
+  to predict where the rockets reach sea level and correct once for the ground under that
+  point, which on a hill is the valley behind it - so the mark sat at the foot of the
+  mountain and the shot went well past anything on top. The rockets had their own copy of
+  the same shortcut, which is why they still flew over a target the cue had settled on.
+  Both now follow the trajectory until it actually meets the ground. Locking a unit also
+  aims at its own height rather than at a guess.
+- Targets on a hilltop are worth firing a little longer on. See the README: the ground
+  under a peak moves a long way for a small change of attitude, so ride the cue down
+  rather than hunting for one perfect release.
+- The smoke trail is much shorter, thinner, fainter and clears much faster. It was borrowed from a
+  battlefield rocket, whose trail is meant to hang in the air and mark where a barrage came
+  from, and on a rocket that flies for half a minute that filled the sky.
+
 ## 0.9.2 - 2026-08-12
 
 - Fixed the pods and rockets rendering bright pink for some players. The mod was shipping

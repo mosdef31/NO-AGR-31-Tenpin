@@ -90,22 +90,8 @@ namespace RocketPod
         {
             float stepScale = Mathf.Max(1f, Plugin.AimpointStepScale.Value);
 
-            TrajectorySolver.Result r = TrajectorySolver.Integrate(
-                spec, launchPos, missile.rb.velocity,
-                groundY: 0f, wind: default, stepScale: stepScale);
-
-            if (r.Hit && Plugin.SampleTerrainHeight.Value)
-            {
-                float groundY = SampleGroundHeight(r.ImpactPoint);
-                if (groundY > 0.5f)
-                {
-                    TrajectorySolver.Result onTerrain = TrajectorySolver.Integrate(
-                        spec, launchPos, missile.rb.velocity,
-                        groundY: groundY, wind: default, stepScale: stepScale);
-                    if (onTerrain.Hit) return onTerrain;
-                }
-            }
-            return r;
+            return TerrainImpact.Solve(spec, launchPos, missile.rb.velocity, stepScale,
+                                       TrySampleGroundHeight);
         }
 
         private static void StampFlightTime(Missile missile, Vector3 launchPos, GlobalPosition target)
@@ -137,6 +123,32 @@ namespace RocketPod
 
         internal static float SampleGroundHeightPublic(Vector3 globalPoint) =>
             SampleGroundHeight(globalPoint);
+
+        internal static bool TrySampleGroundHeight(Vector3 globalPoint, out float height)
+        {
+            height = 0f;
+            try
+            {
+                var global = new GlobalPosition(globalPoint.x, globalPoint.y, globalPoint.z);
+                Vector3 local = global.ToLocalPosition();
+
+                Vector3 from = local + Vector3.up * 6000f;
+                Vector3 to = local - Vector3.up * 6000f;
+
+                int mask = (int)PhysicsLayers.StaticsMask | (int)PhysicsLayers.ShipsMask;
+                if (Physics.Linecast(from, to, out RaycastHit hit, mask))
+                {
+                    height = hit.point.GlobalY();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.LogWarning($"[Tenpin] Ground sample threw: {ex.Message}");
+            }
+
+            return false;
+        }
 
         private static float SampleGroundHeight(Vector3 globalPoint)
         {
@@ -211,33 +223,25 @@ namespace RocketPod
 
             if (result.Hit && Plugin.SampleTerrainHeight.Value)
             {
-                float groundY = SampleGroundHeight(result.ImpactPoint);
-                if (groundY > 0.5f)
-                {
-                    TrajectorySolver.Result onTerrain = TrajectorySolver.Integrate(
-                        spec,
-                        launchPos,
-                        missile.rb.velocity,
-                        groundY: groundY,
-                        wind: default,
-                        stepScale: stepScale);
+                TrajectorySolver.Result marched = TerrainImpact.Solve(
+                    spec, launchPos, missile.rb.velocity, stepScale, TrySampleGroundHeight);
 
-                    if (onTerrain.Hit)
+                if (marched.Hit)
+                {
+                    if (!_loggedTerrain)
                     {
-                        if (!_loggedTerrain)
-                        {
-                            _loggedTerrain = true;
-                            Vector3 a = result.ImpactPoint;
-                            Vector3 b = onTerrain.ImpactPoint;
-                            float shift = new Vector2(b.x - a.x, b.z - a.z).magnitude;
-                            Plugin.Log.LogInfo(
-                                $"[Tenpin] Terrain-corrected aimpoint: ground at the impact point " +
-                                $"is {groundY:0} m above sea level, which moves the prediction " +
-                                $"{shift:0} m. Without this the pattern lands long of high ground " +
-                                "by roughly elevation over tan(descent angle). Logged once per session.");
-                        }
-                        result = onTerrain;
+                        _loggedTerrain = true;
+                        Vector3 a = result.ImpactPoint;
+                        Vector3 b = marched.ImpactPoint;
+                        float shift = new Vector2(b.x - a.x, b.z - a.z).magnitude;
+                        Plugin.Log.LogInfo(
+                            $"[Tenpin] Terrain-marched aimpoint: the ground where the round comes " +
+                            $"down is {b.y:0} m above sea level, which moves the prediction " +
+                            $"{shift:0} m. Without this the pattern lands long of high ground by " +
+                            "roughly elevation over tan(descent angle). Logged once per session.");
                     }
+
+                    result = marched;
                 }
             }
 
