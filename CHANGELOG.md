@@ -4,10 +4,10 @@
 
 - **A third pod, the AGR-31 Tenpin x18.** A slimmer 18 shot drum for fast jets. The
   Shrike, King Viper, Compass and Vagrant carry it.
-- **The AI flies with the pod.** Give a flight the pod and it closes to a range it can
-  reach, lofts the shot, fires a salvo sized to the target, and stays for another pass or
-  two. It aims at a convoy as a column instead of walking vehicle to vehicle, and commits
-  a real volume against SAM sites, ships and buildings. It works on both sides.
+- **AI aircraft know how to use the pod.** They close to a range they can reach, loft the
+  shot, fire a salvo sized to the target, and stay for another pass or two. They aim at a
+  convoy as a column instead of walking vehicle to vehicle, and commit a real volume
+  against SAM sites, ships and buildings. This applies to both sides.
 - **Moving targets are led.** Lock a ship or a convoy and the cue sits ahead of it, and
   the rockets go where the cue is rather than where the target was when you fired.
   Previously a moving target was shot at directly and the salvo landed behind it.

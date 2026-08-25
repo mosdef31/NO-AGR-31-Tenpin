@@ -119,15 +119,15 @@ pointed roughly at what you designated, within about 30 degrees, so turning onto
 is your own turn and it does not fight you on the way round. Raise `Tilt assist authority`
 if it settles too slowly for you.
 
-## The AI flies with it too
+## AI aircraft use it too
 
-Give an AI flight the pod and it will use it properly: close to a range it can reach,
-loft the shot, fire a salvo sized to what it is shooting at, and hold the attack for
-another pass or two before it leaves. Against a convoy it aims at the column rather than
-walking from vehicle to vehicle, and against a SAM site, a ship or a building it commits
-enough rockets to matter.
+AI aircraft carrying the pod know how to use it. They close to a range they can reach,
+loft the shot, fire a salvo sized to what they are shooting at, and stay for another pass
+or two before leaving. Against a convoy they aim at the column rather than walking from
+vehicle to vehicle, and against a SAM site, a ship or a building they commit enough
+rockets to matter.
 
-It works on both sides, so the pod is worth flying against as well as with.
+This applies to both sides, so the pod is worth flying against as well as with.
 
 ## What carries it
 
