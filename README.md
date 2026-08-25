@@ -156,6 +156,14 @@ Full list: [`CONFIG.md`](./CONFIG.md).
 There is a fictional history for the weapon in [`LORE.md`](./LORE.md) if you like that
 sort of thing.
 
+## AI use
+
+I use an AI agent to help with coding, refactoring, asset modification, and authoring
+long bodies of text and lore.
+
+It raises the quality ceiling beyond what my own skills currently guarantee, while I
+learn and develop them. Every decision, every number, and everything that ships is mine.
+
 ## Credit
 
 The rocket model is based on someone else's work, and crediting them is a condition of
