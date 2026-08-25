@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib;
 using UnityEngine;
 
 namespace RocketPod
@@ -251,6 +252,61 @@ namespace RocketPod
                 if (mount == null) continue;
                 AuditMount(mount, ok, fail);
             }
+
+            CheckSwapPatchRegistered(ok, fail);
+        }
+
+        private static void CheckSwapPatchRegistered(List<string> ok, List<string> fail)
+        {
+            MethodBase? target = AccessTools.Method(typeof(MissileLauncher), "OnEnable");
+            if (target == null)
+            {
+                fail.Add("MissileLauncher.OnEnable could not be resolved, so the launcher swap has " +
+                         "nothing to hook. The game's MissileLauncher has changed shape and " +
+                         "LauncherSwap will never run - every pod stays on the stock component, " +
+                         "which fires for the HOST ONLY.");
+                return;
+            }
+
+            bool patchedAtAll = false;
+            foreach (MethodBase m in Harmony.GetAllPatchedMethods())
+            {
+                if (m != target) continue;
+                patchedAtAll = true;
+                break;
+            }
+
+            bool ours = false;
+            if (patchedAtAll)
+            {
+                Patches? info = Harmony.GetPatchInfo(target);
+                if (info?.Postfixes != null)
+                {
+                    foreach (Patch patch in info.Postfixes)
+                    {
+                        if (patch.PatchMethod?.DeclaringType
+                            != typeof(MissileLauncher_OnEnable_SwapPatch)) continue;
+                        ours = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!ours)
+            {
+                fail.Add("MissileLauncher_OnEnable_SwapPatch is NOT registered with Harmony. The " +
+                         "[HarmonyPatch] attribute alone does nothing - Plugin.Awake must call " +
+                         "_harmony.PatchAll(typeof(MissileLauncher_OnEnable_SwapPatch)). Without " +
+                         "it TenpinLauncher is never attached, every pod keeps the stock " +
+                         "MissileLauncher, and that component gates its spawn on owner.LocalSim - " +
+                         "so the pod fires for the HOST ONLY and says nothing about it. This mod " +
+                         "has shipped an unregistered patch class twice; this check is why the " +
+                         "third time is loud.");
+                return;
+            }
+
+            ok.Add("MissileLauncher_OnEnable_SwapPatch is registered on MissileLauncher.OnEnable, " +
+                   "so each pod instance will be swapped to TenpinLauncher as it comes up.");
         }
 
         private static void AuditMount(WeaponMount mount, List<string> ok, List<string> fail)
@@ -260,7 +316,7 @@ namespace RocketPod
             int expected = PluginInfo.RoundsFor(mount.jsonKey);
             if (expected < 0)
                 fail.Add($"WeaponMount.jsonKey is '{mount.jsonKey}' but the DLL expects " +
-                         $"'{PluginInfo.MountKey}' or '{PluginInfo.MountKey19}'. Lookups key off this " +
+                         $"{PluginInfo.MountKeyList}. Lookups key off this " +
                          "exactly, and the round-count check below cannot run without it.");
 
             if (mount.info == null)

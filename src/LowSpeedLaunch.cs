@@ -12,9 +12,6 @@ namespace RocketPod
 
         private const float MaxRelief = 6f;
 
-        internal static float SpeedFraction(float speedMS) =>
-            Mathf.Clamp01(Mathf.Max(speedMS, 0f) / ReferenceSpeed);
-
         internal static float BudgetRelief(float speedMS)
         {
             if (speedMS >= ReferenceSpeed) return 1f;

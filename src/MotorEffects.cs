@@ -20,6 +20,9 @@ namespace RocketPod
         private static bool _donorsLogged;
         private static bool _appliedLogged;
 
+        private static bool _pickLogged;
+        private static string _lastPreference = string.Empty;
+
         internal static void Apply(Missile ours)
         {
             if (!Plugin.UseStockEffects.Value) return;
@@ -93,10 +96,15 @@ namespace RocketPod
         private static Donor ChooseDonor(List<Donor> donors)
         {
 
+            string pref = Plugin.MotorEffectDonor.Value ?? string.Empty;
+            bool say = !_pickLogged || pref != _lastPreference;
+            _pickLogged = true;
+            _lastPreference = pref;
+
             List<Donor> pool = donors.Where(d => d.Usable).ToList();
             if (pool.Count == 0)
             {
-                Plugin.Log.LogWarning(
+                if (say) Plugin.Log.LogWarning(
                     "[Tenpin] No donor in this build has a flame system that is not owned by its " +
                     "trail emitter, so the borrowed exhaust will be smoke only. The candidate " +
                     "list above prints flames= for each; if they are all 0 the classifier's " +
@@ -104,17 +112,17 @@ namespace RocketPod
                 pool = donors;
             }
 
-            string preference = Plugin.MotorEffectDonor.Value;
+            string preference = pref;
             if (DonorPreference.TryBest(pool, d => d.Key, preference,
                                         out Donor preferred, out string why))
             {
-                Plugin.Log.LogInfo(
+                if (say) Plugin.Log.LogInfo(
                     $"[Tenpin] Motor effect donor '{preferred.Key}' - {why}; " +
                     $"{preferred.Flames} flame system(s), {preferred.Lights} light(s).");
                 return preferred;
             }
 
-            if (!string.IsNullOrWhiteSpace(preference))
+            if (say && !string.IsNullOrWhiteSpace(preference))
                 Plugin.Log.LogInfo(
                     $"[Tenpin] No donor WITH FIRE matched any of '{preference}', so one was chosen " +
                     "automatically. This is expected rather than an error - the stock rockets " +
@@ -127,7 +135,7 @@ namespace RocketPod
                 .ThenByDescending(d => d.Flames)
                 .First();
 
-            Plugin.Log.LogInfo(
+            if (say) Plugin.Log.LogInfo(
                 $"[Tenpin] Motor effect donor '{pick.Key}' - closest burn to ours with fire " +
                 $"({pick.Flames} flame system(s), {pick.Lights} light(s), burn {pick.Burn:0.#}s).");
             return pick;
@@ -154,19 +162,122 @@ namespace RocketPod
         private static int Lights(Transform fx) => fx.GetComponentsInChildren<Light>(true).Length;
         private static int Flash(Transform fx) => fx.GetComponentsInChildren<ParticleSystem>(true).Length;
 
+        private static Vector3 ExhaustPoint(Missile ours, Donor donor)
+        {
+
+            var meshes = new List<(Transform At, Mesh Mesh)>();
+            foreach (Renderer r in ours.GetComponentsInChildren<Renderer>(true))
+            {
+                Mesh? mesh = r switch
+                {
+                    SkinnedMeshRenderer skinned => skinned.sharedMesh,
+                    MeshRenderer => r.GetComponent<MeshFilter>()?.sharedMesh,
+                    _ => null,
+                };
+                if (mesh != null) meshes.Add((r.transform, mesh));
+            }
+
+            if (meshes.Count == 0) return donor.Fx.localPosition;
+
+            float tailZ = float.MaxValue;
+            float noseZ = float.MinValue;
+
+            foreach ((Transform at, Mesh mesh) in meshes)
+            {
+                Vector3 c = mesh.bounds.center, e = mesh.bounds.extents;
+                for (int corner = 0; corner < 8; corner++)
+                {
+                    var local = new Vector3(
+                        c.x + ((corner & 1) == 0 ? -e.x : e.x),
+                        c.y + ((corner & 2) == 0 ? -e.y : e.y),
+                        c.z + ((corner & 4) == 0 ? -e.z : e.z));
+
+                    float z = ours.transform.InverseTransformPoint(at.TransformPoint(local)).z;
+                    if (z < tailZ) tailZ = z;
+                    if (z > noseZ) noseZ = z;
+                }
+            }
+
+            if (!_exhaustLogged)
+            {
+                _exhaustLogged = true;
+
+                string verdict = Mathf.Abs(tailZ) > 5f
+                    ? "  IMPLAUSIBLE - a round is ~2 m long, so this is not its tail."
+                    : string.Empty;
+
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] Exhaust point measured from {meshes.Count} mesh(es): " +
+                    $"tailZ={tailZ:0.###} m, nose {noseZ:0.###} m, so the round measures " +
+                    $"{noseZ - tailZ:0.##} m nose to tail.{verdict}");
+            }
+
+            return new Vector3(0f, 0f, tailZ);
+        }
+
+        private static bool _spaceLogged;
+        private static bool _exhaustLogged;
+
+        private static void NormalizeSimulationSpace(GameObject clone, string donorKey)
+        {
+            ParticleSystem[] systems = clone.GetComponentsInChildren<ParticleSystem>(true);
+
+            int fixedCount = 0;
+            var seen = new List<string>();
+
+            foreach (ParticleSystem ps in systems)
+            {
+                if (ps == null) continue;
+
+                ParticleSystem.MainModule main = ps.main;
+                ParticleSystemSimulationSpace was = main.simulationSpace;
+
+                if (!_spaceLogged)
+                    seen.Add($"{ps.gameObject.name}={was}" +
+                             (was == ParticleSystemSimulationSpace.Custom
+                                 ? $"(anchor '{(main.customSimulationSpace == null ? "(null)" : main.customSimulationSpace.name)}')"
+                                 : string.Empty));
+
+                if (was != ParticleSystemSimulationSpace.Custom) continue;
+
+                main.simulationSpace = PlumeTint.IsFlame(ps)
+                    ? ParticleSystemSimulationSpace.Local
+                    : ParticleSystemSimulationSpace.World;
+
+                main.customSimulationSpace = null;
+                fixedCount++;
+            }
+
+            if (_spaceLogged) return;
+            _spaceLogged = true;
+
+            Plugin.Log.LogInfo(
+                $"[Tenpin] Motor plume borrowed from '{donorKey}': {systems.Length} system(s) - " +
+                string.Join(", ", seen));
+
+            if (fixedCount > 0)
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] {fixedCount} of them simulated in CUSTOM space, anchored to a " +
+                    "transform on the donor rather than to our round, and were re-based. That is " +
+                    "the plume that started behind the aircraft and overshot it.");
+        }
+
         private static void CloneOnto(Missile ours, object? motor, Donor donor,
                                       Transform parent, int silenced)
         {
             if (motor == null) return;
 
+            Vector3 exhaust = ExhaustPoint(ours, donor);
+
             GameObject clone = UnityEngine.Object.Instantiate(donor.Fx.gameObject, parent);
             clone.name = "Motor0_Exhaust";
-            float ourLen = ours.definition != null ? ours.definition.length : 0f;
-            float donorLen = donor.Missile.definition != null ? donor.Missile.definition.length : ourLen;
-            clone.transform.localPosition = donor.Fx.localPosition
-                                            + new Vector3(0f, 0f, -(ourLen - donorLen) * 0.5f);
+
+            clone.transform.localPosition = exhaust;
             clone.transform.localRotation = donor.Fx.localRotation;
             clone.SetActive(true);
+
+            NormalizeSimulationSpace(clone, donor.Key);
+            ShapeNozzleGlow(clone, exhaust);
 
             var particles = clone.GetComponentsInChildren<ParticleSystem>(true).ToList();
             var trails = clone.GetComponentsInChildren<TrailEmitter>(true).ToList();
@@ -223,6 +334,54 @@ namespace RocketPod
                 Plugin.Log.LogDebug(
                     $"[Tenpin] Salvo budget: {SalvoBudget.Live} round(s) up, emission scaled to " +
                     $"{scale:0.00}.");
+        }
+
+        private static bool _glowLogged;
+
+        private static void ShapeNozzleGlow(GameObject clone, Vector3 exhaust)
+        {
+            float inset = Plugin.GlowNozzleInset.Value;
+            float sizeScale = Plugin.GlowSizeScale.Value;
+            if (inset <= 0f && sizeScale >= 0.999f) return;
+
+            int shaped = 0;
+
+            foreach (ParticleSystem ps in clone.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                if (ps == null) continue;
+
+                bool isRoot = ReferenceEquals(ps.gameObject, clone);
+
+                ParticleSystem.MainModule main = ps.main;
+
+                if (Mathf.Abs(main.startSpeed.constantMax) >= 0.5f) continue;
+                if (main.startLifetime.constantMax > 0.35f) continue;
+
+                if (inset > 0f && !isRoot)
+                    ps.transform.localPosition += Vector3.forward * inset;
+
+                if (sizeScale < 0.999f)
+                {
+                    ParticleSystem.MinMaxCurve size = main.startSize;
+                    size.constantMin *= sizeScale;
+                    size.constantMax *= sizeScale;
+                    size.curveMultiplier *= sizeScale;
+                    main.startSize = size;
+                }
+
+                shaped++;
+            }
+
+            if (shaped > 0 && !_glowLogged)
+            {
+                _glowLogged = true;
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] Nozzle glow: {shaped} glow/flash system(s) moved {inset:0.##} m " +
+                    $"forward of the tail (which sits at z={exhaust.z:0.###} m) and scaled to " +
+                    $"{sizeScale:0.##}. Borrowed glow is a billboard round its own origin, so on " +
+                    "the tail plane it reads as a sphere stuck to the back of the round rather " +
+                    "than as the motor glowing. Logged once per session.");
+            }
         }
 
         private static void SetMotorArray(object motor, string field, Array value)
@@ -286,7 +445,7 @@ namespace RocketPod
                 if (__instance.definition == null ||
                     __instance.definition.jsonKey != PluginInfo.MissileKey) return;
 
-                FunEffects.StripMotor(__instance);
+                SillyEffects.ApplyMotor(__instance);
                 MotorEffects.Apply(__instance);
             }
             catch (Exception ex)

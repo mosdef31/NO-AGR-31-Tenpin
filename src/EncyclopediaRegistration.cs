@@ -260,8 +260,8 @@ namespace RocketPod
                 if (!string.IsNullOrEmpty(key) && !PluginInfo.IsOurMount(key))
                 {
                     Plugin.Log.LogWarning(
-                        $"[Tenpin] Bundle WeaponMount jsonKey '{key}' is neither " +
-                        $"'{PluginInfo.MountKey}' nor '{PluginInfo.MountKey19}'. Using it anyway, but " +
+                        $"[Tenpin] Bundle WeaponMount jsonKey '{key}' is none of " +
+                        $"{PluginInfo.MountKeyList}. Using it anyway, but " +
                         "the store card and the round-count check both key off this exactly, so fix " +
                         "it in Unity and re-export.");
                 }

@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using RocketPod.Hud;
+using UnityEngine;
 
 namespace RocketPod
 {
@@ -8,6 +9,30 @@ namespace RocketPod
     [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.Fire))]
     internal static class WeaponManager_Fire_ReleaseAssistPatch
     {
+
+        internal static class TriggerWatch
+        {
+
+            private const float UpAfter = 0.08f;
+
+            private static WeaponStation? _station;
+            private static float _at;
+
+            internal static void Note(WeaponStation? station)
+            {
+                if (station == null) return;
+                _station = station;
+                _at = Time.timeSinceLevelLoad;
+            }
+
+            internal static bool Watching(WeaponStation? station) =>
+                station != null && ReferenceEquals(_station, station);
+
+            internal static bool Down(WeaponStation? station) =>
+                Watching(station) && Time.timeSinceLevelLoad - _at <= UpAfter;
+
+            internal static void Clear() => _at = -99f;
+        }
 
         private const float StrayFactor = 2f;
 
@@ -31,8 +56,11 @@ namespace RocketPod
         {
             try
             {
-                if (!Armed) return true;
                 if (!IsOurStation(__instance)) return true;
+
+                TriggerWatch.Note(__instance.currentWeaponStation);
+
+                if (!Armed) return true;
 
                 TenpinHud.Firing s = TenpinHud.Solution;
 
@@ -63,6 +91,7 @@ namespace RocketPod
                 if (s.Miss <= s.Tolerance * StrayFactor) return true;
 
                 _released = false;
+                TriggerWatch.Clear();
 
                 if (!_loggedStop)
                 {

@@ -12,6 +12,9 @@ namespace RocketPod
         private static Sprite? _sprite;
         private static bool _logged;
 
+        private static readonly System.Reflection.FieldInfo? F_orient
+            = AccessTools.Field(typeof(UnitMapIcon), "orient");
+
         private const int SurveyLines = 12;
 
         private static int _surveyed;
@@ -50,12 +53,16 @@ namespace RocketPod
                         $"[Tenpin] Round map icon: the definition had " +
                         (had == null ? "NO sprite, which Unity draws as a filled white square"
                                      : $"sprite '{had.name}'") +
-                        $" at mapIconSize {unit.definition.mapIconSize:0.##}. Replaced with a " +
-                        $"generated dart at {IconSize}. Logged once.");
+                        $" at mapIconSize {unit.definition.mapIconSize:0.##}, mapOrient " +
+                        $"{unit.definition.mapOrient}. Replaced with a generated dart at " +
+                        $"{IconSize}, oriented to the round's heading. Logged once.");
                 }
 
                 unit.definition.mapIcon = dart;
                 unit.definition.mapIconSize = IconSize;
+
+                unit.definition.mapOrient = true;
+                F_orient?.SetValue(__instance, true);
 
                 if (__instance.iconImage != null)
                 {

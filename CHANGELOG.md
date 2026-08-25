@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.1.0 - 2026-08-25
+
+- **A third pod, the AGR-31 Tenpin x18.** A slimmer 18 shot drum for fast jets. The
+  Shrike, King Viper, Compass and Vagrant carry it.
+- **The AI flies with the pod.** Give a flight the pod and it closes to a range it can
+  reach, lofts the shot, fires a salvo sized to the target, and stays for another pass or
+  two. It aims at a convoy as a column instead of walking vehicle to vehicle, and commits
+  a real volume against SAM sites, ships and buildings. It works on both sides.
+- **Moving targets are led.** Lock a ship or a convoy and the cue sits ahead of it, and
+  the rockets go where the cue is rather than where the target was when you fired.
+  Previously a moving target was shot at directly and the salvo landed behind it.
+- **Firing as a client works in multiplayer.** Before this, a player who was not the host
+  used up the ammo and got no rocket, no launch sound and no tube flash, and it stuttered
+  the game for everyone. Client shots are now sent to the host, which launches them, so
+  everyone sees the same rockets. You will not hear your own launch report as a client;
+  the rockets, their flight sound and their impacts are all normal.
+- **The HUD no longer stutters when you look sideways** in artillery mode.
+- **The rockets use the game's own exhaust by default.** The cyan exhaust made for this
+  weapon is still there, now under **`Silly effects`**. It was called `Fun effects`;
+  **delete any `Fun effects` line in your config**, it no longer does anything.
+- **New setting: `Motor effect donor`.** Picks which stock missile's exhaust the rockets
+  borrow. It takes effect on the next shot, so you can try a few without restarting.
+
 ## 1.0.0 - 2026-08-12
 
 - **Release assist**, on by default, and **U** switches it off and on in flight. The HUD

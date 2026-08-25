@@ -41,12 +41,14 @@ namespace RocketPod
         public static ConfigEntry<bool> HudCockpitOnly { get; private set; } = null!;
 
         public static ConfigEntry<bool> ReleaseAssist { get; private set; } = null!;
+        public static ConfigEntry<float> AiLoadoutChance { get; private set; } = null!;
+        public static ConfigEntry<bool> AiForceLoadout { get; private set; } = null!;
         public static ConfigEntry<KeyCode> ReleaseAssistKey { get; private set; } = null!;
         public static ConfigEntry<bool> TiltAssist { get; private set; } = null!;
         public static ConfigEntry<KeyCode> TiltAssistKey { get; private set; } = null!;
         public static ConfigEntry<float> TiltAssistAuthority { get; private set; } = null!;
 
-        public static ConfigEntry<bool> FunEffectsEnabled { get; private set; } = null!;
+        public static ConfigEntry<bool> SillyEffectsEnabled { get; private set; } = null!;
 
         public static ConfigEntry<bool> DumpTuningReadout { get; private set; } = null!;
         public static ConfigEntry<bool> DumpPrefabRenderers { get; private set; } = null!;
@@ -54,6 +56,16 @@ namespace RocketPod
         public static ConfigEntry<bool> CheckBallistics { get; private set; } = null!;
         public static ConfigEntry<string> CheckOnlyWeapon { get; private set; } = null!;
         public static ConfigEntry<string> CheckFileName { get; private set; } = null!;
+
+        public static ConfigEntry<bool> LaunchTrace { get; private set; } = null!;
+
+        public static ConfigEntry<bool> AiShotAudit { get; private set; } = null!;
+
+        public static ConfigEntry<int> AiShotAuditCount { get; private set; } = null!;
+
+        public static ConfigEntry<bool> AiReport { get; private set; } = null!;
+
+        public static ConfigEntry<float> AiReportSeconds { get; private set; } = null!;
 
         public static Settled<float> HudStepScale { get; } = Fixed(6f);
 
@@ -64,6 +76,10 @@ namespace RocketPod
         public static Settled<float> HudFootprintMinPixels { get; } = Fixed(9f);
 
         public static Settled<float> HudMagnifierPixels { get; } = Fixed(190f);
+
+        public static Settled<bool> HudDirector { get; } = Fixed(true);
+
+        public static Settled<float> HudDirectorInterval { get; } = Fixed(0.5f);
 
         public static Settled<float> HudMagnifierTriggerFactor { get; } = Fixed(8f);
 
@@ -77,9 +93,15 @@ namespace RocketPod
 
         public static Settled<float> AimpointStepScale { get; } = Fixed(4f);
 
+        public static Settled<bool> LeadLockedAimpoint { get; } = Fixed(true);
+
         public static Settled<bool> GuidanceBudget { get; } = Fixed(true);
 
         public static Settled<float> GuidanceBudgetMilliradians { get; } = Fixed(5f);
+
+        public static Settled<float> AiGuidanceBudgetMilliradians { get; } = Fixed(45f);
+
+        public static Settled<float> AiGateMargin { get; } = Fixed(0.7f);
 
         public static Settled<bool> AngularDispersion { get; } = Fixed(true);
 
@@ -107,12 +129,11 @@ namespace RocketPod
 
         public static Settled<string> ExtraHardpoints { get; } =
             Fixed("AttackHelo1:2,3,4; UtilityHelo1:0,1; trainer:1,2; VTOLTrainer1:3,4; " +
-                  "MiG-15:2; COIN:2,3; RAH-72:0,1,2,3; F-16M:1,2,3,4; Shrike:2,3");
+                  "MiG-15:2; COIN:2,3; CAS1:2,3,4,5,6,7; RAH-72:0,1,2,3; F-16M:1,2,3,4; Shrike:2,3");
 
         public static Settled<bool> UseStockEffects { get; } = Fixed(true);
 
-        public static Settled<string> MotorEffectDonor { get; } =
-            Fixed("Rocket_MLRS1, Rocket2, Rocket1, AGR");
+        public static ConfigEntry<string> MotorEffectDonor { get; private set; } = null!;
 
         public static Settled<string> WarheadEffectDonor { get; } =
             Fixed("Rocket2, Rocket_MLRS1, Rocket1, AGR, AGM1");
@@ -129,6 +150,128 @@ namespace RocketPod
         public static Settled<bool> SpinRounds { get; } = Fixed(true);
 
         public static Settled<float> SpinDegreesPerSecond { get; } = Fixed(640f);
+
+        public static Settled<float> GlowNozzleInset { get; } = Fixed(0.10f);
+
+        public static Settled<float> GlowSizeScale { get; } = Fixed(0.55f);
+
+        public static Settled<bool> AiEmployment { get; } = Fixed(true);
+
+        public static Settled<float> AiSalvoEconomyRange { get; } = Fixed(5000f);
+
+        public static Settled<float> AiFullSalvoRange { get; } = Fixed(17000f);
+
+        public static Settled<float> AiSalvoNear { get; } = Fixed(12f);
+
+        public static Settled<float> AiSalvoFar { get; } = Fixed(18f);
+
+        public static Settled<float> AiOverwhelmFactor { get; } = Fixed(2.0f);
+
+        public static Settled<float> AiPreferredMinRange { get; } = Fixed(8000f);
+
+        public static Settled<float> AiEgressSeconds { get; } = Fixed(25f);
+
+        public static Settled<int> AiTargetsPerPass { get; } = Fixed(3);
+
+        public static Settled<string> AiHexAircraft { get; } = Fixed("CI-22");
+
+        public static Settled<int> AiSelfDefenceSets { get; } = Fixed(2);
+
+        public static Settled<float> RoundRadarSize { get; } = Fixed(0.05f);
+
+        public static Settled<bool> AiConvoyAim { get; } = Fixed(true);
+
+        public static Settled<int> AiConvoyMinVehicles { get; } = Fixed(3);
+
+        public static Settled<bool> RoundsCountAsAttacks { get; } = Fixed(true);
+
+        public static Settled<float> RoundThreatRadius { get; } = Fixed(150f);
+
+        public static Settled<float> AiAimLeadMetres { get; } = Fixed(4000f);
+
+        public static Settled<float> AiRangeBias { get; } = Fixed(0.007f);
+
+        public static Settled<float> AiTimeOfFlightBias { get; } = Fixed(1.03f);
+
+        public static Settled<float> AiPromisingFactor { get; } = Fixed(3f);
+
+        public static Settled<float> AiGiveUpSeconds { get; } = Fixed(8f);
+
+        public static Settled<float> AiCrossingCeiling { get; } = Fixed(2.5f);
+
+        public static Settled<int> AiBurstsPerApproach { get; } = Fixed(3);
+
+        public static Settled<float> AiLoiterSeconds { get; } = Fixed(14f);
+
+        public static Settled<float> AiPassSeconds { get; } = Fixed(75f);
+
+        public static Settled<float> AiBurstSeconds { get; } = Fixed(2.5f);
+
+        public static Settled<float> AiAbortRange { get; } = Fixed(2000f);
+
+        public static Settled<float> AiArcSmoothing { get; } = Fixed(0.35f);
+
+        public static Settled<float> AiCrossingLead { get; } = Fixed(0.35f);
+
+        public static Settled<float> AiTrimGain { get; } = Fixed(0.35f);
+
+        public static Settled<float> AiTrimLead { get; } = Fixed(0.5f);
+
+        public static Settled<float> AiTrimRateSmoothing { get; } = Fixed(0.35f);
+
+        public static Settled<float> AiTrimSettleDegrees { get; } = Fixed(1.5f);
+
+        public static Settled<float> AiTrimDeadband { get; } = Fixed(0.3f);
+
+        public static Settled<float> AiTrimLimitDegrees { get; } = Fixed(4f);
+
+        public static Settled<float> AiAimSlewDegreesPerSecond { get; } = Fixed(2.5f);
+
+        public static Settled<float> AiAimEffort { get; } = Fixed(0.3f);
+
+        public static Settled<float> AiMaxBankDegrees { get; } = Fixed(35f);
+
+        public static Settled<float> AiSettleSeconds { get; } = Fixed(0.2f);
+
+        public static Settled<float> AiSteadyRateDegrees { get; } = Fixed(14f);
+
+        public static Settled<float> AiHeloShotInterval { get; } = Fixed(0.6f);
+
+        public static Settled<float> AiHeloSteadyRateDegrees { get; } = Fixed(18f);
+
+        public static Settled<float> AiHeloPopUpRange { get; } = Fixed(9000f);
+
+        public static Settled<float> AiHeloMaxSideSpeed { get; } = Fixed(6f);
+
+        public static Settled<float> AiHeloRecoverTimeout { get; } = Fixed(8f);
+
+        public static Settled<float> AiHeloAbortAlignDegrees { get; } = Fixed(20f);
+
+        public static Settled<float> AiHeloRunInAlignDegrees { get; } = Fixed(8f);
+
+        public static Settled<float> AiHeloRunInSeconds { get; } = Fixed(2.5f);
+
+        public static Settled<float> AiHeloPitchRateDegrees { get; } = Fixed(12f);
+
+        public static Settled<float> AiHeloPitchTimeout { get; } = Fixed(6f);
+
+        public static Settled<int> AiHeloSalvo { get; } = Fixed(19);
+        public static Settled<float> AiHeloFireSeconds { get; } = Fixed(4.5f);
+
+        public static Settled<float> AiHeloBreakDegrees { get; } = Fixed(10f);
+        public static Settled<float> AiHeloBreakSeconds { get; } = Fixed(6f);
+
+        public static Settled<float> AiHeloMaxLoftDegrees { get; } = Fixed(38f);
+
+        public static Settled<float> AiStationaryTolerance { get; } = Fixed(1.15f);
+
+        public static Settled<float> AiUnroutedTolerance { get; } = Fixed(1.5f);
+
+        public static Settled<float> AiSolveInterval { get; } = Fixed(1f);
+
+        public static Settled<float> AiSolverStepScale { get; } = Fixed(8f);
+
+        public static Settled<float> AiClusterRadius { get; } = Fixed(200f);
 
         public static Settled<float> TuningLaunchAltitude { get; } = Fixed(1500f);
 
@@ -152,7 +295,7 @@ namespace RocketPod
         public static Settled<float> ControlRoundBoost { get; } = Fixed(40f);
 
         public static Settled<float> MountVerticalOffset { get; } =
-            Fixed(MountRideHeight.Flush7);
+            Fixed(PluginInfo.Mounts[0].FlushOffset);
 
         private Harmony? _harmony;
 
@@ -167,44 +310,69 @@ namespace RocketPod
 
                 _harmony = new Harmony(PluginInfo.GUID);
 
-                _harmony.PatchAll(typeof(Encyclopedia_AfterLoad_RegistrationPatch));
+                Patch(typeof(Encyclopedia_AfterLoad_RegistrationPatch));
 
-                _harmony.PatchAll(typeof(WeaponMount_Initialize_NullPrefabGuard));
+                Patch(typeof(WeaponMount_Initialize_NullPrefabGuard));
 
-                _harmony.PatchAll(typeof(Missile_OnStartClient_BudgetPatch));
+                Patch(typeof(Hardpoint_SpawnMount_OffsetPatch));
+
+                Patch(typeof(MissileLauncher_OnEnable_SwapPatch));
+
+                Patch(typeof(Unit_SyncAmmo_DivergencePatch));
+
+                if (AiEmployment.Value)
+                {
+                    Patch(typeof(AIPilotCombatModes_UseMissiles_TenpinPatch));
+
+                    Patch(typeof(AIHeloCombatState_UseMissiles_TenpinPatch));
+                    Patch(typeof(Autopilot_AutoAim_BankPatch));
+
+                    if (AiShotAudit.Value)
+                    {
+                        Patch(typeof(Missile_OnStartClient_AuditPatch));
+                        Patch(typeof(Missile_Detonate_AuditPatch));
+                    }
+
+                if (RoundsCountAsAttacks.Value)
+                {
+
+                    Patch(typeof(Missile_OnStartClient_ThreatPatch));
+                    Patch(typeof(Missile_Detonate_ThreatPatch));
+                }
+                }
+
+                Patch(typeof(AircraftParameters_GetRandomStandardLoadout_TenpinPatch));
+                Patch(typeof(WeaponManager_SelectAIAircraftWeapons_TenpinPatch));
+                Patch(typeof(Spawner_SpawnAircraft_TenpinLoadoutPatch));
+
+                Patch(typeof(Missile_OnStartClient_BudgetPatch));
 
                 if (UseStockEffects.Value)
-                    _harmony.PatchAll(typeof(Missile_OnStartClient_EffectsPatch));
+                    Patch(typeof(Missile_OnStartClient_EffectsPatch));
 
                 if (UseStockEffects.Value)
-                    _harmony.PatchAll(typeof(MissileLauncher_Fire_AudioPatch));
+                    Patch(typeof(Missile_OnStartClient_FlightAudioPatch));
 
-                if (UseStockEffects.Value)
-                    _harmony.PatchAll(typeof(MissileLauncher_OnEnable_LaunchParticlesPatch));
+                Patch(typeof(WeaponStation_LaunchMount_CyclePatch));
 
-                if (UseStockEffects.Value)
-                    _harmony.PatchAll(typeof(Missile_OnStartClient_FlightAudioPatch));
+                Patch(typeof(WeaponManager_Fire_SingleTargetPatch));
 
-                _harmony.PatchAll(typeof(WeaponStation_LaunchMount_CyclePatch));
+                Patch(typeof(Missile_OnStartClient_SpinPatch));
 
-                _harmony.PatchAll(typeof(WeaponManager_Fire_SingleTargetPatch));
+                Patch(typeof(Missile_OnStartClient_SignaturePatch));
 
-                _harmony.PatchAll(typeof(MissileLauncher_OnEnable_RoundVisualsPatch));
+                Patch(typeof(Missile_OnStartClient_IRSignaturePatch));
 
-                _harmony.PatchAll(typeof(Missile_OnStartClient_SpinPatch));
+                Patch(typeof(InertialSeekerShell_Initialize_Patch));
 
-                _harmony.PatchAll(typeof(Missile_OnStartClient_SignaturePatch));
+                Patch(typeof(Kinematics_GetBallisticAimPoint_FlightTimePatch));
 
-                _harmony.PatchAll(typeof(Missile_OnStartClient_IRSignaturePatch));
+                Patch(typeof(WeaponManager_Fire_ReleaseAssistPatch));
+                Patch(typeof(PilotPlayerState_PlayerAxisControls_TiltAssistPatch));
 
-                _harmony.PatchAll(typeof(InertialSeekerShell_Initialize_Patch));
+                Patch(typeof(UnitMapIcon_SetIcon_RoundIconPatch));
 
-                _harmony.PatchAll(typeof(Kinematics_GetBallisticAimPoint_FlightTimePatch));
-
-                _harmony.PatchAll(typeof(WeaponManager_Fire_ReleaseAssistPatch));
-                _harmony.PatchAll(typeof(PilotPlayerState_PlayerAxisControls_TiltAssistPatch));
-
-                _harmony.PatchAll(typeof(UnitMapIcon_SetIcon_RoundIconPatch));
+                Patch(typeof(TenpinLauncher.WeaponStation_AccountAmmo_PrunePatch));
 
                 gameObject.AddComponent<AssetCheckRunner>();
                 gameObject.AddComponent<Hud.TenpinHud>();
@@ -235,6 +403,12 @@ namespace RocketPod
 
                 Log.LogInfo($"[RocketPod] Loaded v{PluginInfo.Version}. " +
                             $"ballisticsCheck={CheckBallistics.Value}");
+
+                if (_patchFailures > 0)
+                    base.Logger.LogError(
+                        $"[RocketPod] {_patchFailures} patch class(es) failed to register, so " +
+                        "some features are MISSING rather than broken. Search this log for " +
+                        "'FAILED to register' for the list. The mod is otherwise running.");
             }
             catch (Exception ex)
             {
@@ -242,245 +416,278 @@ namespace RocketPod
             }
         }
 
+        private void Patch(Type patchClass)
+        {
+            try
+            {
+                _harmony!.PatchAll(patchClass);
+            }
+            catch (Exception ex)
+            {
+                _patchFailures++;
+                base.Logger.LogError(
+                    $"[RocketPod] Patch class '{patchClass.Name}' FAILED to register and was " +
+                    $"skipped: {ex.Message}. Everything else still loaded. If a feature is " +
+                    "missing in game, this is the line that says which one.");
+            }
+        }
+
+        private int _patchFailures;
+
         private void BindConfig()
         {
+
+            AiLoadoutChance = Config.Bind(
+                "AI", "LoadoutChance", 0.25f,
+                new ConfigDescription(
+                    "Chance an AI flight carries the AGR-31 on a pylon that can take " +
+                    "it, rolled per hardpoint set. 1 arms every cleared aircraft, 0 " +
+                    "arms none.",
+                    new AcceptableValueRange<float>(0f, 1f),
+                    new ConfigurationManagerAttributes { Order = 100 }));
+
+            AiForceLoadout = Config.Bind(
+                "Advanced", "AiForceLoadout", false,
+                new ConfigDescription(
+                    "Arms every AI flight on a cleared airframe with the 'Saturation " +
+                    "and Self Defence' loadout, ignoring LoadoutChance.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 40 }));
 
             HudEnabled = Config.Bind(
                 "HUD", "Enabled", true,
                 new ConfigDescription(
-                    "Draw the AGR-31's own weapon HUD while the pod is the selected store. " +
-                    "Off falls back to the stock missile UI, which has no impact cue at all.",
+                    "Draws the AGR-31's own weapon HUD while the pod is the selected " +
+                    "store. Off leaves the stock missile UI.",
                     null,
                     new ConfigurationManagerAttributes { Order = 100 }));
 
             HudModeKey = Config.Bind(
                 "HUD", "ModeKey", KeyCode.B,
                 new ConfigDescription(
-                    "Switch between direct (CCIP) and artillery (CCRP) presentation. A keypress " +
-                    "rather than an automatic range threshold, deliberately: a HUD that changes " +
-                    "itself mid-attack feels broken even when the switch is correct.",
+                    "Switches between direct (CCIP) and artillery (CCRP) " +
+                    "presentation.",
                     null,
                     new ConfigurationManagerAttributes { Order = 90 }));
 
             HudDesignateKey = Config.Bind(
                 "HUD", "DesignateKey", KeyCode.T,
                 new ConfigDescription(
-                    "In artillery mode, designate the ground point under the cursor while the map " +
-                    "is MAXIMIZED. Clearing is not on this key - it is on the game's own untarget " +
-                    "button, so one button means 'forget that target' whatever kind it is. A unit " +
-                    "lock always wins over a ground designation.",
+                    "Designates the ground point under the cursor in artillery mode, " +
+                    "while the map is maximized. The game's untarget button clears " +
+                    "it. A unit lock overrides a ground designation.",
                     null,
                     new ConfigurationManagerAttributes { Order = 80 }));
 
             HudPanelAnchor = Config.Bind(
                 "HUD", "PanelAnchor", Hud.HudAnchor.RightBelowWeapons,
                 new ConfigDescription(
-                    "Where the text block and the magnifier sit. Presets rather than raw " +
-                    "coordinates, because the useful positions are decided by what else is on " +
-                    "screen: the chat log and kill feed own the top left, the stock weapon panel " +
-                    "owns the top right, and the bottom edge carries the gear and flap cues. " +
-                    "RightBelowWeapons clears all of them.",
+                    "Where the text block and the magnifier sit on screen.",
                     null,
                     new ConfigurationManagerAttributes { Order = 70 }));
 
             HudMaxRangeArc = Config.Bind(
                 "HUD", "MaxRangeArc", true,
                 new ConfigDescription(
-                    "Draw the maximum-reach arc on the ground in artillery mode. It answers 'can " +
-                    "I touch that from here' at a glance instead of by comparing two numbers.",
+                    "Draws the maximum-reach arc on the ground in artillery mode.",
                     null,
                     new ConfigurationManagerAttributes { Order = 60 }));
 
             HudMagnifier = Config.Bind(
                 "HUD", "Magnifier", true,
                 new ConfigDescription(
-                    "Draw a magnified inset of the area around the designated point. Lofting a " +
-                    "long shot puts the cues low on the screen over the canopy rail, exactly when " +
-                    "you are trying to lay one mark on another to within a few pixels. The inset " +
-                    "magnifies the same marks rather than re-rendering them, so it cannot " +
-                    "disagree with them, and it still works when the pipper has gone off the " +
-                    "bottom of the screen.",
+                    "Draws a magnified inset of the area around the designated point.",
                     null,
                     new ConfigurationManagerAttributes { Order = 50 }));
 
             HudMapMarker = Config.Bind(
                 "HUD", "MapMarker", true,
                 new ConfigDescription(
-                    "Mark the designated ground point on the map. The designation is made on the " +
-                    "map and until now was drawn only in the cockpit, so the one screen where " +
-                    "you set it gave no confirmation that it took or where it landed. The mark " +
-                    "is a diamond in your own HUD colour, and it appears only while the pod is " +
-                    "the selected weapon.",
+                    "Marks the designated ground point on the map, as a diamond in " +
+                    "your HUD colour, while the pod is the selected weapon.",
                     null,
                     new ConfigurationManagerAttributes { Order = 45 }));
 
             HudNoseAimBelowKph = Config.Bind(
                 "HUD", "NoseAimBelowKph", 100f,
                 new ConfigDescription(
-                    "Below this airspeed the impact point is drawn as though the aircraft were " +
-                    "moving straight along its nose, instead of along its actual velocity. " +
-                    "Rockets keep whatever sideways speed you hand them, so when you are slow " +
-                    "enough for a small drift to be a large part of your speed, a truthful cue " +
-                    "wanders around under you and cannot be laid on a target. This one answers " +
-                    "'where do they go if I stop drifting', which is the question you can fly " +
-                    "to. Only the horizontal is substituted; a descent is always shown " +
-                    "truthfully. It fades out over the 40 km/h above the threshold, and above " +
-                    "that it does nothing at all - a jet's cue is unaffected. 0 turns it off.",
+                    "Below this airspeed the impact point is drawn along the " +
+                    "aircraft's nose instead of along its velocity. Horizontal only. " +
+                    "Fades out over the 40 km/h above the threshold; 0 turns it off.",
                     new AcceptableValueRange<float>(0f, 300f),
                     new ConfigurationManagerAttributes { Order = 44 }));
 
             HudTerrainCheck = Config.Bind(
                 "HUD", "TerrainCheck", true,
                 new ConfigDescription(
-                    "Draw a designated point you cannot actually see as a dashed diamond instead " +
-                    "of a solid one. The HUD is drawn over the world rather than in it, so a " +
-                    "mark standing on a ridge and a mark three kilometres behind that ridge " +
-                    "appear in the same place at the same size - this is the only thing telling " +
-                    "them apart. One raycast per frame.",
+                    "Draws a designated point that is out of sight as a dashed " +
+                    "diamond instead of a solid one.",
                     null,
                     new ConfigurationManagerAttributes { Order = 43 }));
 
             HudHideWithGear = Config.Bind(
                 "HUD", "HideWithGear", true,
                 new ConfigDescription(
-                    "Hide the weapon HUD while the landing gear is down, which is what every " +
-                    "stock weapon HUD does.",
+                    "Hides the weapon HUD while the landing gear is down.",
                     null,
                     new ConfigurationManagerAttributes { Order = 40 }));
 
             HudCockpitOnly = Config.Bind(
                 "HUD", "CockpitOnly", true,
                 new ConfigDescription(
-                    "Hide the HUD on the external cameras. Ours is drawn to a screen-space " +
-                    "overlay canvas of our own, so unlike the stock HUD - which lives on the " +
-                    "cockpit glass and simply is not in shot from outside - nothing hides it for " +
-                    "us, and it would otherwise float over an orbit or chase view.",
+                    "Hides the HUD on the external cameras.",
                     null,
                     new ConfigurationManagerAttributes { Order = 30 }));
 
             ReleaseAssist = Config.Bind(
                 "Assist", "Release assist", true,
                 new ConfigDescription(
-                    "Hold the trigger and the pod fires itself the moment the rockets will land on " +
-                    "the point you designated, instead of you judging the release by eye. Holding " +
-                    "the trigger is the consent - nothing fires unless you are already holding it, " +
-                    "and letting go always stops it. It only ever delays a shot you aimed at " +
-                    "something: with no designation, or a target out of reach, or the HUD hidden, " +
-                    "the trigger behaves exactly as it does now. Once a salvo starts it stays open " +
-                    "for the whole ripple.",
+                    "Fires the pod while you hold the trigger, at the moment the " +
+                    "rockets will land on the designated point. Releasing the trigger " +
+                    "stops it. With no designation, a target out of reach, or the HUD " +
+                    "hidden, the trigger fires normally.",
                     null,
                     new ConfigurationManagerAttributes { Order = 43 }));
 
             TiltAssist = Config.Bind(
                 "Assist", "Tilt assist", false,
                 new ConfigDescription(
-                    "Fly the heading and let the pod fly the elevation. While the pod is selected " +
-                    "and you have a point designated, this adds pitch to bring the rockets onto the " +
-                    "range you need, so lining up a long shot is a matter of pointing at the target " +
-                    "rather than finding the loft by hand. Your own stick input is added on top and " +
-                    "is never capped, so you can overpower it at any moment, and it does nothing at " +
-                    "all with no designation. OFF by default because it changes how the aircraft " +
-                    "flies.",
+                    "Adds pitch to bring the rockets onto the range you need while a " +
+                    "point is designated. Your stick input is added on top and is " +
+                    "never capped.",
                     null,
                     new ConfigurationManagerAttributes { Order = 42 }));
 
             ReleaseAssistKey = Config.Bind(
                 "Assist", "ReleaseAssistKey", KeyCode.U,
                 new ConfigDescription(
-                    "Turns the release assist on and off in flight, so a shot that wants taking by " +
-                    "hand does not need a trip to the settings. Unlike the tilt assist this one " +
-                    "starts every sortie ON, matching its setting - it only ever delays a shot you " +
-                    "aimed at something you designated, so having it on is the safe state. The HUD " +
-                    "says AUTO while it is armed.",
+                    "Turns the release assist on and off in flight. The HUD shows " +
+                    "AUTO while it is armed.",
                     null,
                     new ConfigurationManagerAttributes { Order = 44 }));
 
             TiltAssistKey = Config.Bind(
                 "Assist", "TiltAssistKey", KeyCode.Y,
                 new ConfigDescription(
-                    "Arms and disarms the tilt assist in flight. It starts every sortie disarmed, " +
-                    "because something that moves the aircraft should be switched on deliberately " +
-                    "rather than found already running. The HUD shows TILT ARMED when it is on and " +
-                    "TILT when it is actually flying the shot.",
+                    "Arms and disarms the tilt assist in flight. It starts every " +
+                    "sortie disarmed. The HUD shows TILT ARMED when armed and TILT " +
+                    "while it is flying the shot.",
                     null,
                     new ConfigurationManagerAttributes { Order = 41 }));
 
             TiltAssistAuthority = Config.Bind(
                 "Assist", "Tilt assist authority", 0.30f,
                 new ConfigDescription(
-                    "How much of the pitch axis the tilt assist is allowed to use, as a fraction. " +
-                    "0.30 is just under a third of full deflection, which settles a long shot in a " +
-                    "couple of seconds and is still far too little to fight you for the aircraft - " +
-                    "your own stick is added on top and is never limited. It was 0.10 and was too " +
-                    "weak to be useful. Raise it if it still settles too slowly for you.",
+                    "Fraction of the pitch axis the tilt assist may use. Your own " +
+                    "stick is added on top and is never limited.",
                     new AcceptableValueRange<float>(0f, 1f),
                     new ConfigurationManagerAttributes { Order = 41 }));
 
-            FunEffectsEnabled = Config.Bind(
-                "Effects", "Fun effects", false,
+            MotorEffectDonor = Config.Bind(
+                "Effects", "Motor effect donor", "AAM1",
                 new ConfigDescription(
-                    "Play the AGR-31's own authored effects: a cyan motor plume, an ignition " +
-                    "ember burst, a nozzle light, a smoke trail and a flash at the tube. It is a " +
-                    "deliberately gamey look and it is not what the weapon is supposed to be, " +
-                    "which is why it ships OFF - off borrows the game's own rocket effects. The " +
-                    "sound is the same either way. Takes effect on the next round fired.",
+                    "Which stock missile's motor effect the rockets borrow, by " +
+                    "jsonKey. A comma separated list is allowed and the first that " +
+                    "has fire wins; empty picks by closest burn time. Read per round. " +
+                    "Suggested: AAM1, AGM2, AAM3.",
+                    null,
+
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 99 }));
+
+            SillyEffectsEnabled = Config.Bind(
+                "Effects", "Silly effects", false,
+                new ConfigDescription(
+                    "Flies the AGR-31's own cyan effects instead of a borrowed stock " +
+                    "plume.",
                     null,
                     new ConfigurationManagerAttributes { Order = 100 }));
 
             DumpTuningReadout = Config.Bind(
                 "Advanced", "TuningReadout", false,
                 new ConfigDescription(
-                    "Print the round's MAXIMUM range and the stock damage table at the missions " +
-                    "menu. The range comes from an elevation sweep to 70 degrees, so it reports " +
-                    "what the round is capable of rather than whatever loft was flown - and it " +
-                    "needs no flight at all.",
+                    "Prints the round's maximum range and the stock damage table at " +
+                    "the missions menu.",
                     null,
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 100 }));
 
             DumpPrefabRenderers = Config.Bind(
                 "Advanced", "DumpPrefabRenderers", false,
                 new ConfigDescription(
-                    "Dump the mounted prefab's transforms, meshes, materials, shaders, layers and " +
-                    "scales at the missions menu, next to a stock pod's. This is what diagnoses " +
-                    "an invisible or mis-shaded weapon from a log instead of by guessing.",
+                    "Dumps the mounted prefab's transforms, meshes, materials, " +
+                    "shaders, layers and scales at the missions menu, next to a stock " +
+                    "pod's.",
                     null,
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 90 }));
 
             DumpFlightModels = Config.Bind(
                 "Advanced", "DumpFlightModels", false,
                 new ConfigDescription(
-                    "Dump every stock round's drag curve, lift curve, torque, PID and fin area " +
-                    "next to ours, sorted by drag per unit mass. These are serialized ASSET values " +
-                    "and cannot be read from a decompile, which matters because Tenpin once " +
-                    "shipped with empty aero curves and zero torque and nothing noticed.",
+                    "Dumps every stock round's drag curve, lift curve, torque, PID " +
+                    "and fin area next to ours, sorted by drag per unit mass.",
                     null,
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 80 }));
+
+            LaunchTrace = Config.Bind(
+                "Advanced", "LaunchTrace", false,
+                new ConfigDescription(
+                    "Traces the launch path and prints a verdict. Detail for the " +
+                    "first eight shots, counters after that, one summary once the " +
+                    "salvo goes quiet.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 69 }));
+
+            AiShotAudit = Config.Bind(
+                "Advanced", "AiShotAudit", false,
+                new ConfigDescription(
+                    "Prints, per AI shot, where the salvo landed against where the " +
+                    "profile predicted, with the miss distance.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 68 }));
+
+            AiShotAuditCount = Config.Bind(
+                "Advanced", "AiShotAuditCount", 12,
+                new ConfigDescription(
+                    "How many audited shots AiShotAudit prints before going quiet.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 67 }));
+
+            AiReport = Config.Bind(
+                "Advanced", "AiReport", false,
+                new ConfigDescription(
+                    "Prints a line each time an AI declines to shoot, naming the " +
+                    "reason it held fire.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 66 }));
+
+            AiReportSeconds = Config.Bind(
+                "Advanced", "AiReportSeconds", 10f,
+                new ConfigDescription(
+                    "Seconds between repeats of the same AiReport reason.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 65 }));
 
             CheckBallistics = Config.Bind(
                 "Advanced", "CheckBallistics", false,
                 new ConfigDescription(
-                    "Predict every launch with the trajectory solver and score it at impact. NOT " +
-                    "FREE: each launch runs three full integrations to ground impact plus a " +
-                    "per-tick sample of every live round, and a seven-tube pod on six stations is " +
-                    "42 launches in a few seconds, which is visibly laggy. Turn it on for a " +
-                    "measurement run and fire ONE pod, ideally with CheckOnlyWeapon set.",
+                    "Predicts every launch with the trajectory solver and scores it " +
+                    "at impact. Costs three full integrations per launch plus a per- " +
+                    "tick sample of every live round; a 42-round salvo is visibly " +
+                    "laggy.",
                     null,
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 70 }));
 
             CheckOnlyWeapon = Config.Bind(
                 "Advanced", "CheckOnlyWeapon", "",
                 new ConfigDescription(
-                    "Only score rounds whose unit name contains this text, e.g. \"MLRS\". Empty " +
-                    "scores every launch, which gets noisy fast in a real mission.",
+                    "Only scores rounds whose unit name contains this text, e.g. " +
+                    "\"MLRS\". Empty scores every launch.",
                     null,
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 60 }));
 
             CheckFileName = Config.Bind(
                 "Advanced", "CheckFileName", "rocketpod-ballistics.txt",
                 new ConfigDescription(
-                    "Written under the BepInEx folder. A file rather than the log because " +
-                    "LogOutput.log is truncated on the next launch, and this is exactly the " +
-                    "output that gets read one launch too late.",
+                    "Name of the ballistics file, written under the BepInEx folder.",
                     null,
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 50 }));
         }

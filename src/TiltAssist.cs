@@ -30,6 +30,12 @@ namespace RocketPod
 
         private const float Smoothing = 0.12f;
 
+        private const float RateSmoothing = 0.25f;
+
+        private const float MaxRateMetresPerSecond = 1500f;
+
+        private const float LeadDemandLimit = 1.5f;
+
         private static float _lastError;
         private static bool _hasLastError;
         private static float _integral;
@@ -102,15 +108,25 @@ namespace RocketPod
                 if (fresh)
                 {
                     float sdt = _hasLastError ? Mathf.Max(s.Time - _lastSolutionTime, 1e-4f) : 0f;
-                    _rate = _hasLastError ? (error - _lastError) / sdt : 0f;
+
+                    float raw = _hasLastError
+                        ? Mathf.Clamp((error - _lastError) / sdt,
+                                      -MaxRateMetresPerSecond, MaxRateMetresPerSecond)
+                        : 0f;
+
+                    _rate = _hasLastError
+                        ? Mathf.Lerp(_rate, raw, 1f - Mathf.Exp(-sdt / RateSmoothing))
+                        : 0f;
 
                     _lastError = error;
                     _lastSolutionTime = s.Time;
                     _hasLastError = true;
                 }
 
-                float lookahead = error + Lead * _rate;
-                float proportional = lookahead / ErrorForFullDemand;
+                float lead = Mathf.Clamp(Lead * _rate / ErrorForFullDemand,
+                                         -LeadDemandLimit, LeadDemandLimit);
+
+                float proportional = error / ErrorForFullDemand + lead;
 
                 if (Mathf.Abs(proportional) < 1f)
                 {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using HarmonyLib;
 using UnityEngine;
 
 namespace RocketPod
@@ -8,13 +7,13 @@ namespace RocketPod
 
     internal sealed class RoundVisuals : MonoBehaviour
     {
-        private MissileLauncher _launcher = null!;
+        private TenpinLauncher _launcher = null!;
         private readonly List<GameObject> _rounds = new();
         private int _lastShown = -1;
         private static bool _loggedMismatch;
         private static bool _loggedMissing;
 
-        internal bool Bind(MissileLauncher launcher)
+        internal bool Bind(TenpinLauncher launcher)
         {
             _launcher = launcher;
 
@@ -109,29 +108,6 @@ namespace RocketPod
                 if (go == null) continue;
                 bool visible = i >= spent;
                 if (go.activeSelf != visible) go.SetActive(visible);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(MissileLauncher), "OnEnable")]
-    internal static class MissileLauncher_OnEnable_RoundVisualsPatch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(MissileLauncher __instance)
-        {
-            try
-            {
-                if (!Plugin.HideFiredRounds.Value) return;
-                if (__instance.info == null) return;
-                if (__instance.info.weaponName != PluginInfo.WeaponInfoName) return;
-                if (__instance.GetComponent<RoundVisuals>() != null) return;
-
-                var visuals = __instance.gameObject.AddComponent<RoundVisuals>();
-                if (!visuals.Bind(__instance)) UnityEngine.Object.Destroy(visuals);
-            }
-            catch (Exception ex)
-            {
-                Plugin.Log.LogError($"[Tenpin] Round visuals failed (firing is unaffected): {ex}");
             }
         }
     }

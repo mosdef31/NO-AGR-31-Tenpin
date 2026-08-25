@@ -14,19 +14,16 @@ namespace RocketPod
 
         private const float MaxDuration = 0.25f;
 
-        private static readonly FieldInfo? _fLaunchParticles =
-            AccessTools.Field(typeof(MissileLauncher), "launchParticles");
         private static readonly FieldInfo? _fEffectsTransform =
             AccessTools.Field(typeof(Missile), "effectsTransform");
 
         private static bool _logged;
 
-        internal static void Apply(MissileLauncher launcher)
+        internal static void Apply(TenpinLauncher launcher)
         {
             if (!Plugin.UseStockEffects.Value) return;
-            if (_fLaunchParticles == null) return;
 
-            if (_fLaunchParticles.GetValue(launcher) as ParticleSystem != null) return;
+            if (launcher.launchParticles != null) return;
             if (launcher.transform.Find(ContainerName) != null) return;
 
             ParticleSystem? donor = FindDonor(out string from);
@@ -72,7 +69,7 @@ namespace RocketPod
             }
 
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            _fLaunchParticles.SetValue(launcher, ps);
+            launcher.launchParticles = ps;
 
             if (!_logged)
             {
@@ -90,6 +87,9 @@ namespace RocketPod
             ParticleSystem.MainModule main = ps.main;
             main.loop = false;
             main.playOnAwake = false;
+
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.customSimulationSpace = null;
             main.duration = Mathf.Min(main.duration, MaxDuration);
             main.startLifetime = new ParticleSystem.MinMaxCurve(
                 Mathf.Min(main.startLifetime.constantMax, MaxDuration));
@@ -138,28 +138,6 @@ namespace RocketPod
 
             from = $"'{candidates[0].Key.Trim()}' (no preference matched)";
             return candidates[0].Ps;
-        }
-    }
-
-    [HarmonyPatch(typeof(MissileLauncher), "OnEnable")]
-    internal static class MissileLauncher_OnEnable_LaunchParticlesPatch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(MissileLauncher __instance)
-        {
-            try
-            {
-                if (__instance.info == null ||
-                    __instance.info.weaponName != PluginInfo.WeaponInfoName) return;
-
-                FunEffects.StripLauncher(__instance);
-                LaunchParticles.Apply(__instance);
-            }
-            catch (Exception ex)
-            {
-                Plugin.Log.LogError(
-                    $"[Tenpin] Borrowing a launch flash failed (the pod still fires): {ex}");
-            }
         }
     }
 }

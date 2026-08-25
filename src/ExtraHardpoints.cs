@@ -50,6 +50,14 @@ namespace RocketPod
             return sb.ToString();
         }
 
+        private static bool GetsBothFamilies(string key, WeaponManager wm)
+        {
+            if (AiLoadout.PrefersHex(wm)) return true;
+
+            string k = Normalize(key);
+            return k == Normalize("COIN") || k == Normalize("CAS1");
+        }
+
         private static bool Resolve(string name, Dictionary<string, WeaponManager> managers,
                                     List<WeaponManager> all, out WeaponManager found,
                                     out string how)
@@ -161,9 +169,15 @@ namespace RocketPod
                     HardpointSet s = sets[i];
                     s.weaponOptions ??= new List<WeaponMount>();
 
+                    bool both = GetsBothFamilies(name, wm);
+
                     foreach (WeaponMount m in EncyclopediaRegistration.ResolvedMounts)
                     {
                         if (m == null) continue;
+
+                        bool isDrum = m.jsonKey == PluginInfo.MountKey18;
+                        if (!both && !isDrum) continue;
+
                         if (s.weaponOptions.Contains(m)) { alreadyThere++; continue; }
 
                         s.weaponOptions.Add(m);

@@ -1,33 +1,45 @@
 # AGR-31 Tenpin
 
-**Rocket pods for Nuclear Option, with a HUD that tells you where they will land.**
+**Unguided rocket pods for Nuclear Option, with a HUD that shows you where they land.**
 
 [![Latest release](https://img.shields.io/github/v/release/mosdef31/NO-AGR-31-Tenpin?style=for-the-badge&label=download&color=2ea043)](https://github.com/mosdef31/NO-AGR-31-Tenpin/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/mosdef31/NO-AGR-31-Tenpin/total?style=for-the-badge&color=blue)](https://github.com/mosdef31/NO-AGR-31-Tenpin/releases)
 [![Game version](https://img.shields.io/badge/Nuclear%20Option-0.34%2B-orange?style=for-the-badge)](https://store.steampowered.com/app/2168680/Nuclear_Option/)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-lightgrey?style=for-the-badge)](./ATTRIBUTION.md)
+[![Issues](https://img.shields.io/github/issues/mosdef31/NO-AGR-31-Tenpin?style=for-the-badge&color=orange)](https://github.com/mosdef31/NO-AGR-31-Tenpin/issues)
 
-📥 **[Download the latest release](https://github.com/mosdef31/NO-AGR-31-Tenpin/releases/latest)** &nbsp;·&nbsp;
+📥 **[Download](https://github.com/mosdef31/NO-AGR-31-Tenpin/releases/latest)** &nbsp;·&nbsp;
 📝 **[What's new](./CHANGELOG.md)** &nbsp;·&nbsp;
 ⚙️ **[Settings](./CONFIG.md)** &nbsp;·&nbsp;
+🙏 **[Credits](./ATTRIBUTION.md)** &nbsp;·&nbsp;
+📖 **[Lore](./LORE.md)** &nbsp;·&nbsp;
 🐛 **[Report a bug](https://github.com/mosdef31/NO-AGR-31-Tenpin/issues)**
 
 ---
 
 ## What it is
 
-Two rocket pods, a 7 shot and a 19 shot, firing an unguided 90 mm rocket that reaches
-much further than the stock ones. Load six pods on an A-19 and you put 42 rockets in the
-air in about three seconds, or 114 in about nine.
-
-They are not precision weapons. You fire them at an area from a long way out and let
-volume do the work, which makes them good against SAM and AAA sites and poor against a
-single hard target. The AGR-24 is still the better answer to a tank.
+### Air to ground
 
 | Pod | Rockets | Loaded | Empty | Price |
 |---|---|---|---|---|
 | AGR-31 Tenpin x7 | 7 | 225 kg | 50 kg | $175k |
+| AGR-31 Tenpin x18 | 18 | 565 kg | 115 kg | $450k |
 | AGR-31 Tenpin x19 | 19 | 580 kg | 105 kg | $475k |
+
+- **AGR-31 Tenpin x7:** the light hex pod. Fits anything, including the stub pylons on a
+  helicopter.
+- **AGR-31 Tenpin x18:** the fast-jet drum. Slimmer, and the one the Shrike, King Viper,
+  Compass and Vagrant carry.
+- **AGR-31 Tenpin x19:** the heavy hex pod. The most rockets you can put on one pylon.
+
+They all fire the same unguided 90 mm rocket, which reaches a great deal further than the
+stock ones. Load six pods on an A-19 and you put 42 rockets in the air in about three
+seconds, or 114 in about nine.
+
+They are not precision weapons. You fire them at an area from a long way out and let
+volume do the work, which makes them good against SAM and AAA sites and poor against a
+single hard target. The AGR-24 is still the better answer to a tank.
 
 | | |
 |---|---|
@@ -64,9 +76,9 @@ The stock missile UI does not show you where an unguided rocket lands, so the po
 its own.
 
 **Artillery mode** is for lobbing them at something you can see on the map. Open the map,
-press **T** on a spot - it is marked on the map so you can see it took - and the HUD
-shows where the salvo will land, how big the spread
-will be, how far you can reach, and turns the cue green when you should fire.
+press **T** on a spot, which is marked on the map so you can see it took, and the HUD
+shows where the salvo will land, how big the spread will be, how far you can reach, and
+turns the cue green when you should fire.
 
 **Direct mode** is for the gun run. It shows a moving impact point you fly onto.
 
@@ -74,12 +86,16 @@ will be, how far you can reach, and turns the cue green when you should fire.
 because a lofted shot puts the marks low on the screen right when you need to read them
 carefully. Locking a unit overrides whatever you designated on the ground.
 
+**A moving target is led for you.** Lock a ship or a convoy and the cue sits ahead of it,
+with a line back to where it is now. Fly the cue, not the target, and the rockets arrive
+with it.
+
 **Targets on a hilltop are worth one extra habit.** The cue is honest about where the
 rockets meet the ground, and on a peak that answer moves a long way for a small change of
-attitude - a shot that clears the summit lands in the valley behind it. Rather than
-hunting for the perfect release, fire on the cue and keep firing as the nose comes down
-through it. The salvo walks up the slope onto the target and something in it connects.
-That is what a saturation weapon is for.
+attitude: a shot that clears the summit lands in the valley behind it. Rather than hunting
+for the perfect release, fire on the cue and keep firing as the nose comes down through
+it. The salvo walks up the slope onto the target and something in it connects. That is
+what a saturation weapon is for.
 
 ## Help with the shot
 
@@ -103,11 +119,21 @@ pointed roughly at what you designated, within about 30 degrees, so turning onto
 is your own turn and it does not fight you on the way round. Raise `Tilt assist authority`
 if it settles too slowly for you.
 
+## The AI flies with it too
+
+Give an AI flight the pod and it will use it properly: close to a range it can reach,
+loft the shot, fire a salvo sized to what it is shooting at, and hold the attack for
+another pass or two before it leaves. Against a convoy it aims at the column rather than
+walking from vehicle to vehicle, and against a SAM site, a ship or a building it commits
+enough rockets to matter.
+
+It works on both sides, so the pod is worth flying against as well as with.
+
 ## What carries it
 
-The A-19 out of the box, plus the SAH-46 Chicane, UH-90 Ibis, T/A-30 Compass and VT-7
-Vagrant and the CI-22 Cricket, which already carry the AGR-24. Aryx's MiG-15, RAH-72
-Knockout and F-16M King Viper too if you have them. You can add other aircraft in the
+The A-19 out of the box, plus the SAH-46 Chicane, UH-90 Ibis, T/A-30 Compass, VT-7
+Vagrant and CI-22 Cricket, which already carry the AGR-24. Aryx's MiG-15, RAH-72 Knockout,
+F-16M King Viper and F-99 Shrike too if you have them. You can add other aircraft in the
 config by name.
 
 Helicopters work but are the worst platform for it. Hovering, you have no speed to give
@@ -132,14 +158,20 @@ end up flying new code against old assets.
 
 ## Settings
 
-`BepInEx/config/com.tenpin.cfg`, created the first time you run it. Twenty-two settings:
-eleven are the HUD, four are the aiming help above, and the rest are diagnostics. The `[Advanced]` block is diagnostic logging, off by default,
-and none of it changes how the weapon flies.
+`BepInEx/config/com.tenpin.cfg`, created the first time you run it. The `[Advanced]`
+block is diagnostic logging, off by default, and none of it changes how the weapon flies.
 
-One worth knowing about: **`Fun effects`**. Off, the rockets use the game's own effects.
-On, they get the ones made for this weapon, which is a bright cyan exhaust, sparks at
-ignition and a flash at each tube. It looks great and it looks nothing like the rest of
-the game, so it is off unless you ask for it. Sound is the same either way.
+One worth knowing about: **`Silly effects`**, off by default. Off, the rockets use the
+game's own effects. On, they get the ones made for this weapon: a **cyan through violet**
+exhaust, sparks at ignition and a nozzle light. It looks nothing like the rest of the
+game, which is exactly why it is opt-in. Sound is the same either way.
+
+There is also **`Motor effect donor`**, which picks which stock missile's exhaust gets
+borrowed when `Silly effects` is off. It is read per shot, so you can change it and see
+the difference on the next ripple without restarting.
+
+> If your config still has a `Fun effects` line, that is the old name for `Silly effects`
+> and it no longer does anything. Delete it.
 
 Everything else about how the weapon performs is fixed in the build.
 
@@ -148,8 +180,8 @@ Full list: [`CONFIG.md`](./CONFIG.md).
 ## Known issues
 
 - **Helicopters are the weakest platform.** A hover has almost no reach.
-- **Multiplayer is untested.** Nobody has flown this with another player. It is the
-  biggest unknown in the mod.
+- **Multiplayer is lightly tested.** Firing as a client works now, but only a little of it
+  has been flown on two machines. If something looks wrong there, the log is worth sending.
 
 ## Background
 
@@ -158,20 +190,18 @@ sort of thing.
 
 ## AI use
 
-I use an AI agent to help with coding, refactoring, asset modification, and authoring
-long bodies of text and lore.
+I use an AI agent to help with coding, refactoring, asset modification, and authoring long
+bodies of text and lore.
 
-It raises the quality ceiling beyond what my own skills currently guarantee, while I
-learn and develop them. Every decision, every number, and everything that ships is mine.
+It raises the quality ceiling beyond what my own skills currently guarantee, while I learn
+and develop them. Every decision, every number, and everything that ships is mine.
 
-## Credit
+## About this source
 
-The rocket model is based on someone else's work, and crediting them is a condition of
-the licence rather than a nicety. It has to stay with any copy of this mod:
+`src/` is the mod's C# with the comments stripped, published so you can read what it does.
+It is not a checkout you can build: the project file, the asset bundle and the local game
+path are not here.
 
-> "Roketsan Missiles" (https://skfb.ly/pq7qp) by **sakigakefuruzawa**, licensed under
-> Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/). Changes
-> were made.
-
-Everything else, the pods, their textures and all of the code, is mine and is offered
-under the same CC BY 4.0 licence. Details in [`ATTRIBUTION.md`](./ATTRIBUTION.md).
+The rocket model is not my work, and the credit is a licence condition rather than a
+courtesy. See [`ATTRIBUTION.md`](./ATTRIBUTION.md) for whose it is and what the licence
+requires.

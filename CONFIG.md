@@ -2,67 +2,138 @@
 
 `BepInEx/config/com.tenpin.cfg`, written on first run.
 
-**Eighteen keys, eleven of them the HUD.** During development this file had 57, covering
-dispersion, blast, signature, price, guidance and the aimpoint corrections. Those are
-settled and compiled into the build. The reasoning for each value sits next to the value
-in `Plugin.cs`.
+**31 keys: 11 for the HUD, 5 for the assists, 2 for effects, 1 for AI loadouts and 12
+diagnostics.** During development this file had 57, covering dispersion, blast,
+signature, price, guidance and the aimpoint corrections. Those are settled and compiled
+into the build; the reasoning for each value sits next to the value in `Plugin.cs`.
 
-`[Effects]` holds one key, and it is taste rather than balance: the pod ships with the
-game's own borrowed rocket effects, and `Fun effects` swaps in the set authored for this
-weapon - a cyan plume and a flash at the tube. It is deliberately over the top. It changes
-the look only; the pod sounds the same either way.
-
-Everything under `[Advanced]` is a diagnostic dump. All off by default, all writing to
-the log or a file under `BepInEx/`, none of it changing how the weapon flies. With
-BepInEx's ConfigurationManager installed the section sits behind its "Advanced settings"
-toggle.
+The descriptions in the settings menu say what a setting does and nothing else, because
+that is what fits in ConfigurationManager's panel. Where a setting exists for a reason
+that is not obvious from what it does, the reason is under the table for its section
+here.
 
 **If you tested a pre-release build, delete the file and let it regenerate.** BepInEx
-does not remove keys a new version stopped binding, so an old file keeps 43 dead entries.
+does not remove keys a new version stopped binding, so an old file keeps dead entries.
 
 
 ## HUD
 
 | Key | Default | | Effect |
 |---|---|---|---|
-| `Enabled` | true |  | Draw the AGR-31's own weapon HUD while the pod is the selected store. Off falls back to the stock missile UI, which has no impact cue at all. |
-| `ModeKey` | KeyCode.B |  | Switch between direct (CCIP) and artillery (CCRP) presentation. A keypress rather than an automatic range threshold, deliberately: a HUD that changes itself mid-attack feels broken even when the switch is correct. |
-| `DesignateKey` | KeyCode.T |  | In artillery mode, designate the ground point under the cursor while the map is MAXIMIZED. Clearing is not on this key - it is on the game's own untarget button, so one button means 'forget that target' whatever kind it is. A unit lock always wins over a ground designation. |
-| `PanelAnchor` | Hud.HudAnchor.RightBelowWeapons |  | Where the text block and the magnifier sit. Presets rather than raw coordinates, because the useful positions are decided by what else is on screen: the chat log and kill feed own the top left, the stock weapon panel owns the top right, and the bottom edge carries the gear and flap cues. RightBelowWeapons clears all of them. |
-| `MaxRangeArc` | true |  | Draw the maximum-reach arc on the ground in artillery mode. It answers 'can I touch that from here' at a glance instead of by comparing two numbers. |
-| `Magnifier` | true |  | Draw a magnified inset of the area around the designated point. Lofting a long shot puts the cues low on the screen over the canopy rail, exactly when you are trying to lay one mark on another to within a few pixels. The inset magnifies the same marks rather than re-rendering them, so it cannot disagree with them, and it still works when the pipper has gone off the bottom of the screen. |
-| `MapMarker` | true |  | Mark the designated ground point on the map. The designation is made on the map and until now was drawn only in the cockpit, so the one screen where you set it gave no confirmation that it took or where it landed. The mark is a diamond in your own HUD colour, and it appears only while the pod is the selected weapon. |
-| `TerrainCheck` | true |  | Draw a designated point you cannot actually see as a dashed diamond instead of a solid one. The HUD is drawn over the world rather than in it, so a mark standing on a ridge and a mark three kilometres behind that ridge appear in the same place at the same size - this is the only thing telling them apart. One raycast per frame. |
-| `NoseAimBelowKph` | 100 |  | Below this airspeed the impact point is drawn as though the aircraft were moving straight along its nose, instead of along its actual velocity. Rockets keep whatever sideways speed you hand them, so when you are slow enough for a small drift to be a large part of your speed, a truthful cue wanders around under you and cannot be laid on a target. This one answers 'where do they go if I stop drifting', which is the question you can fly to. Only the horizontal is substituted; a descent is always shown truthfully. It fades out over the 40 km/h above the threshold, and above that it does nothing at all - a jet's cue is unaffected. 0 turns it off. |
-| `HideWithGear` | true |  | Hide the weapon HUD while the landing gear is down, which is what every stock weapon HUD does. |
-| `CockpitOnly` | true |  | Hide the HUD on the external cameras. Ours is drawn to a screen-space overlay canvas of our own, so unlike the stock HUD - which lives on the cockpit glass and simply is not in shot from outside - nothing hides it for us, and it would otherwise float over an orbit or chase view. |
+| `Enabled` | true |  | Draws the AGR-31's own weapon HUD while the pod is the selected store. Off leaves the stock missile UI. |
+| `ModeKey` | KeyCode.B |  | Switches between direct (CCIP) and artillery (CCRP) presentation. |
+| `DesignateKey` | KeyCode.T |  | Designates the ground point under the cursor in artillery mode, while the map is maximized. The game's untarget button clears it. A unit lock overrides a ground designation. |
+| `PanelAnchor` | Hud.HudAnchor.RightBelowWeapons |  | Where the text block and the magnifier sit on screen. |
+| `MaxRangeArc` | true |  | Draws the maximum-reach arc on the ground in artillery mode. |
+| `Magnifier` | true |  | Draws a magnified inset of the area around the designated point. |
+| `MapMarker` | true |  | Marks the designated ground point on the map, as a diamond in your HUD colour, while the pod is the selected weapon. |
+| `NoseAimBelowKph` | 100 |  | Below this airspeed the impact point is drawn along the aircraft's nose instead of along its velocity. Horizontal only. Fades out over the 40 km/h above the threshold; 0 turns it off. |
+| `TerrainCheck` | true |  | Draws a designated point that is out of sight as a dashed diamond instead of a solid one. |
+| `HideWithGear` | true |  | Hides the weapon HUD while the landing gear is down. |
+| `CockpitOnly` | true |  | Hides the HUD on the external cameras. |
+
+**Why the mode is a keypress and not a range threshold.** A HUD that switches itself
+mid-attack reads as broken even when the switch is correct.
+
+**Why the magnifier exists.** Lofting a long shot puts the cues low on the screen over
+the canopy rail, exactly when you are laying one mark on another to within a few pixels.
+
+**Why `MapMarker` exists.** The designation is made on the map and used to be drawn only
+in the cockpit, so the one screen where you set it gave no confirmation that it took.
+
+**Why `NoseAimBelowKph` exists.** Rockets keep whatever sideways speed you hand them, so
+at low airspeed a truthful cue wanders under you and cannot be laid on a target. This one
+answers where the rounds go if you stop drifting, which is a question you can fly to.
+
+**Why `TerrainCheck` exists.** The HUD is drawn over the world rather than in it, so a
+mark standing on a ridge and a mark three kilometres behind it appear in the same place
+at the same size.
+
+**Why `CockpitOnly` defaults on.** The stock HUD lives on the cockpit glass and is simply
+not in shot from outside. Ours is an overlay canvas, so without this it floats over an
+orbit or chase view.
+
 
 ## Assist
 
 | Key | Default | | Effect |
 |---|---|---|---|
-| `Release assist` | true |  | Hold the trigger and the pod fires itself the moment the rockets will land on the point you designated, instead of you judging the release by eye. Holding the trigger is the consent - nothing fires unless you are already holding it, and letting go always stops it. It only ever delays a shot you aimed at something: with no designation, or a target out of reach, or the HUD hidden, the trigger behaves exactly as it does now. Once a salvo starts it stays open for the whole ripple. |
-| `ReleaseAssistKey` | KeyCode.U |  | Turns the release assist on and off in flight, so a shot that wants taking by hand does not need a trip to the settings. Unlike the tilt assist this one starts every sortie ON, matching its setting - it only ever delays a shot you aimed at something you designated, so having it on is the safe state. The HUD says AUTO while it is armed. |
-| `Tilt assist` | false |  | Fly the heading and let the pod fly the elevation. While the pod is selected and you have a point designated, this adds pitch to bring the rockets onto the range you need, so lining up a long shot is a matter of pointing at the target rather than finding the loft by hand. Your own stick input is added on top and is never capped, so you can overpower it at any moment, and it does nothing at all with no designation. OFF by default because it changes how the aircraft flies. |
-| `TiltAssistKey` | KeyCode.Y |  | Arms and disarms the tilt assist in flight. It starts every sortie disarmed, because something that moves the aircraft should be switched on deliberately rather than found already running. The HUD shows TILT ARMED when it is on and TILT when it is actually flying the shot. |
-| `Tilt assist authority` | 0.30 |  | How much of the pitch axis the tilt assist is allowed to use, as a fraction. 0.30 is just under a third of full deflection, which settles a long shot in a couple of seconds and is still far too little to fight you for the aircraft - your own stick is added on top and is never limited. It was 0.10 and was too weak to be useful. Raise it if it still settles too slowly for you. |
+| `Release assist` | true |  | Fires the pod while you hold the trigger, at the moment the rockets will land on the designated point. Releasing the trigger stops it. With no designation, a target out of reach, or the HUD hidden, the trigger fires normally. |
+| `Tilt assist` | false |  | Adds pitch to bring the rockets onto the range you need while a point is designated. Your stick input is added on top and is never capped. |
+| `ReleaseAssistKey` | KeyCode.U |  | Turns the release assist on and off in flight. The HUD shows AUTO while it is armed. |
+| `TiltAssistKey` | KeyCode.Y |  | Arms and disarms the tilt assist in flight. It starts every sortie disarmed. The HUD shows TILT ARMED when armed and TILT while it is flying the shot. |
+| `Tilt assist authority` | 0.30 |  | Fraction of the pitch axis the tilt assist may use. Your own stick is added on top and is never limited. |
+
+**They were designed as one package**, agreed with the owner on 2026-08-12, and chosen
+instead of widening dispersion, which would have made the shot easier by making each
+rocket weaker.
+
+**The release assist can only ever delay a shot you aimed at something.** It suppresses
+the trigger calls the game already makes while you hold the button; it never makes one.
+Once a salvo starts it stays open for the whole ripple, and it closes again if you stray
+off the point.
+
+**The tilt authority was 0.10 and was too weak to be useful.** Raise it past 0.30 if a
+long shot still settles too slowly for you.
+
 
 ## Effects
 
 | Key | Default | | Effect |
 |---|---|---|---|
-| `Fun effects` | false |  | Play the AGR-31's own authored effects: a cyan motor plume, an ignition ember burst, a nozzle light, a smoke trail and a flash at the tube. It is a deliberately gamey look and it is not what the weapon is supposed to be, which is why it ships OFF - off borrows the game's own rocket effects. The sound is the same either way. Takes effect on the next round fired. |
+| `Motor effect donor` | AAM1 |  | Which stock missile's motor effect the rockets borrow, by jsonKey. A comma separated list is allowed and the first that has fire wins; empty picks by closest burn time. Read per round. Suggested: AAM1, AGM2, AAM3. |
+| `Silly effects` | false |  | Flies the AGR-31's own cyan effects instead of a borrowed stock plume. |
+
+**The default is a borrowed plume.** The rockets take a stock missile's motor effect
+rather than an authored one, and that is the shipped answer rather than a stopgap: the
+stock effects are tuned against the game's own lighting and fog.
+
+**Not every donor that lists a flame is a plume.** Some are ignition flashes with no
+direction at all, which is what `AIR-2_Genie` is. Run the plume-scan tool (F9) to see
+what each candidate actually draws before choosing one.
+
+**`Motor effect donor` sits behind the Advanced toggle.** It ships at a donor chosen by
+flying every candidate, and changing it without reading plume-scan's output picks a worse
+plume than the default. It is still an `[Effects]` key in the config file.
+
+**`Silly effects` was called `Fun effects` before 1.1.0.** BepInEx keeps keys a new
+version stopped binding, so an old config file still carries a `Fun effects` line that
+now does nothing. Delete it or regenerate the file.
+
+
+## AI
+
+| Key | Default | | Effect |
+|---|---|---|---|
+| `LoadoutChance` | 0.25 |  | Chance an AI flight carries the AGR-31 on a pylon that can take it, rolled per hardpoint set. 1 arms every cleared aircraft, 0 arms none. |
+
 
 ## Advanced
 
 | Key | Default | | Effect |
 |---|---|---|---|
-| `TuningReadout` | false |  | Print the round's MAXIMUM range and the stock damage table at the missions menu. The range comes from an elevation sweep to 70 degrees, so it reports what the round is capable of rather than whatever loft was flown - and it needs no flight at all. |
-| `DumpPrefabRenderers` | false |  | Dump the mounted prefab's transforms, meshes, materials, shaders, layers and scales at the missions menu, next to a stock pod's. This is what diagnoses an invisible or mis-shaded weapon from a log instead of by guessing. |
-| `DumpFlightModels` | false |  | Dump every stock round's drag curve, lift curve, torque, PID and fin area next to ours, sorted by drag per unit mass. These are serialized ASSET values and cannot be read from a decompile, which matters because Tenpin once shipped with empty aero curves and zero torque and nothing noticed. |
-| `CheckBallistics` | false |  | Predict every launch with the trajectory solver and score it at impact. NOT FREE: each launch runs three full integrations to ground impact plus a per-tick sample of every live round, and a seven-tube pod on six stations is 42 launches in a few seconds, which is visibly laggy. Turn it on for a measurement run and fire ONE pod, ideally with CheckOnlyWeapon set. |
-| `CheckOnlyWeapon` |  |  | Only score rounds whose unit name contains this text, e.g. \"MLRS\". Empty scores every launch, which gets noisy fast in a real mission. |
-| `CheckFileName` | rocketpod-ballistics.txt |  | Written under the BepInEx folder. A file rather than the log because LogOutput.log is truncated on the next launch, and this is exactly the output that gets read one launch too late. |
+| `AiForceLoadout` | false |  | Arms every AI flight on a cleared airframe with the 'Saturation and Self Defence' loadout, ignoring LoadoutChance. |
+| `TuningReadout` | false |  | Prints the round's maximum range and the stock damage table at the missions menu. |
+| `DumpPrefabRenderers` | false |  | Dumps the mounted prefab's transforms, meshes, materials, shaders, layers and scales at the missions menu, next to a stock pod's. |
+| `DumpFlightModels` | false |  | Dumps every stock round's drag curve, lift curve, torque, PID and fin area next to ours, sorted by drag per unit mass. |
+| `LaunchTrace` | false |  | Traces the launch path and prints a verdict. Detail for the first eight shots, counters after that, one summary once the salvo goes quiet. |
+| `AiShotAudit` | false |  | Prints, per AI shot, where the salvo landed against where the profile predicted, with the miss distance. |
+| `AiShotAuditCount` | 12 |  | How many audited shots AiShotAudit prints before going quiet. |
+| `AiReport` | false |  | Prints a line each time an AI declines to shoot, naming the reason it held fire. |
+| `AiReportSeconds` | 10 |  | Seconds between repeats of the same AiReport reason. |
+| `CheckBallistics` | false |  | Predicts every launch with the trajectory solver and scores it at impact. Costs three full integrations per launch plus a per- tick sample of every live round; a 42-round salvo is visibly laggy. |
+| `CheckOnlyWeapon` |  |  | Only scores rounds whose unit name contains this text, e.g. \"MLRS\". Empty scores every launch. |
+| `CheckFileName` | rocketpod-ballistics.txt |  | Name of the ballistics file, written under the BepInEx folder. |
+
+Every key here is a diagnostic. All off by default, all writing to the log or to a file
+under `BepInEx/`, none of them changing how the weapon flies. With ConfigurationManager
+installed the section sits behind its "Advanced settings" toggle.
+
+**They ship rather than being cut** because they are the only way to answer a bug report
+from a machine that is not this one. The pod is an asset mod, and its whole class of
+failure - an unset field, a missing map, a bundle that did not load - is invisible from
+outside and obvious in these dumps.
+
 
 ## What used to be here
 

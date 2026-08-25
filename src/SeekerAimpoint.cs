@@ -20,6 +20,9 @@ namespace RocketPod
         internal static readonly FieldInfo? Error =
             AccessTools.Field(typeof(InertialSeekerShell), "error");
 
+        internal static readonly FieldInfo? TargetUnit =
+            AccessTools.Field(typeof(MissileSeeker), "targetUnit");
+
         internal static bool Ok =>
             Missile != null && KnownPos != null && AimPos != null &&
             CEP != null && Error != null;
@@ -39,18 +42,84 @@ namespace RocketPod
 
         private const float ReferenceFallbackSpeed = LowSpeedLaunch.ReferenceSpeed;
 
-        private static GlobalPosition ClampToBudget(Missile missile, Vector3 launchPos,
-                                                    GlobalPosition target)
+        private static bool IsAiShot(Missile missile)
+        {
+            if (missile == null || missile.owner == null) return false;
+
+            if (missile.owner is Aircraft aircraft && aircraft.pilots != null)
+            {
+                foreach (Pilot pilot in aircraft.pilots)
+                {
+                    if (pilot != null && pilot.playerControlled) return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool _loggedLead;
+        private static bool _loggedLeadOff;
+
+        private static GlobalPosition LeadLockedTarget(InertialSeekerShell seeker, Missile missile,
+                                                       GlobalPosition target,
+                                                       TrajectorySolver.Result ballistic)
+        {
+            if (!Plugin.LeadLockedAimpoint.Value)
+            {
+                if (!_loggedLeadOff)
+                {
+                    _loggedLeadOff = true;
+                    Plugin.Log.LogInfo(
+                        "[Tenpin] LeadLockedAimpoint is off, so a locked round aims at where its " +
+                        "target is at release rather than where it will be. Against anything " +
+                        "moving the salvo lands astern by the target's own travel. Logged once.");
+                }
+                return target;
+            }
+
+            if (!ballistic.Hit || ballistic.TimeOfFlight <= 0f) return target;
+
+            if (SeekerFields.TargetUnit == null) return target;
+            if (SeekerFields.TargetUnit.GetValue(seeker) is not Unit unit) return target;
+            if (!TargetLead.IsMoving(unit)) return target;
+
+            Vector3 led = TargetLead.PredictPosition(unit, ballistic.TimeOfFlight, out bool routed);
+
+            led.y = target.y;
+
+            var leadPoint = new GlobalPosition(led);
+
+            if (!_loggedLead)
+            {
+                _loggedLead = true;
+                float moved = ((Vector3)(leadPoint - target)).magnitude;
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] Locked aimpoint led by {moved:0} m over a {ballistic.TimeOfFlight:0.0} s " +
+                    $"time of flight ({(routed ? "the target's OWN ROUTE" : "extrapolated heading")}), " +
+                    $"target '{unit.unitName}' doing {(unit.rb != null ? unit.rb.velocity.magnitude : 0f):0} m/s. " +
+                    "The guidance budget is measured against this point, not against where the " +
+                    "target was at release, so a well-flown lead is no longer charged as aiming " +
+                    "error and spent undoing itself. Logged once per session.");
+            }
+
+            return leadPoint;
+        }
+
+        private static GlobalPosition ClampToBudget(Missile missile, GlobalPosition target,
+                                                    TrajectorySolver.Result ballistic)
         {
             if (!Plugin.GuidanceBudget.Value) return target;
 
-            float mrad = Plugin.GuidanceBudgetMilliradians.Value;
+            // ── WHOSE ROUND IS THIS ──────────────────────────────────────────
+            //
+            // A player's budget is 5 mrad and stays 5 mrad: it is half of the
+
+            float mrad = IsAiShot(missile)
+                ? Plugin.AiGuidanceBudgetMilliradians.Value
+                : Plugin.GuidanceBudgetMilliradians.Value;
+
             if (mrad <= 0f) return target;
 
-            TrajectorySolver.RoundSpec? spec = RoundSpecFactory.FromMissile(missile, Plugin.Log);
-            if (spec == null) return target;
-
-            TrajectorySolver.Result ballistic = Predict(spec, missile, launchPos);
             if (!ballistic.Hit) return target;
 
             Vector3 from = ballistic.ImpactPoint;
@@ -121,9 +190,6 @@ namespace RocketPod
             state.LaunchTime = Time.timeSinceLevelLoad;
         }
 
-        internal static float SampleGroundHeightPublic(Vector3 globalPoint) =>
-            SampleGroundHeight(globalPoint);
-
         internal static bool TrySampleGroundHeight(Vector3 globalPoint, out float height)
         {
             height = 0f;
@@ -184,7 +250,17 @@ namespace RocketPod
 
             if (knownPos != aimPos)
             {
-                GlobalPosition aimed = ClampToBudget(missile, launchPos, knownPos);
+
+                TrajectorySolver.RoundSpec? lockSpec = RoundSpecFactory.FromMissile(missile, Plugin.Log);
+                TrajectorySolver.Result lockBallistic = lockSpec != null
+                    ? Predict(lockSpec, missile, launchPos)
+                    : default;
+
+                GlobalPosition led = LeadLockedTarget(seeker, missile, knownPos, lockBallistic);
+                GlobalPosition aimed = lockSpec != null
+                    ? ClampToBudget(missile, led, lockBallistic)
+                    : led;
+
                 if (aimed != knownPos) SeekerFields.KnownPos.SetValue(seeker, aimed);
                 StampFlightTime(missile, launchPos, aimed);
                 return ((Vector3)(aimed - missile.GlobalPosition())).magnitude;

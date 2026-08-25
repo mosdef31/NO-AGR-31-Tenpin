@@ -130,9 +130,6 @@ namespace RocketPod.Hud
 
         private static bool _loggedFontMissing;
 
-        private static readonly System.Reflection.FieldInfo? _fEjection =
-            HarmonyLib.AccessTools.Field(typeof(MissileLauncher), "ejectionVelocity");
-
         private void OnEnable()
         {
             UnityEngine.SceneManagement.SceneManager.activeSceneChanged += OnSceneChanged;
@@ -297,7 +294,7 @@ namespace RocketPod.Hud
             if (_vec == null) return;
 
             Color cue = hud;
-            bool designated = TryGetDesignation(aircraft, station, out Vector3 dtarget);
+            bool designated = TryGetDesignation(aircraft, station, r.TimeOfFlight, out Vector3 dtarget);
             bool onTarget = false;
             bool inReach = true;
             float missDist = 0f;
@@ -370,6 +367,8 @@ namespace RocketPod.Hud
 
             int i2 = 0;
             Vector2 org = PanelOrigin(px);
+            _panelOriginX = org.x;
+            _panelBottomY = org.y;
             SetText(ref i2, pip + new Vector2(20f * px, -14f * px), $"ToF {r.TimeOfFlight:0.0}", cue, px);
             SetText(ref i2, pip + new Vector2(20f * px, -30f * px), $"CEP {cep:0}", Fade(hud, 0.75f), px);
             SetText(ref i2, org, "AGR-31 CCIP", hud, px);
@@ -404,6 +403,8 @@ namespace RocketPod.Hud
             Vector2 org = PanelOrigin(px);
             float left = org.x;
             float top = org.y;
+            _panelOriginX = left;
+            _panelBottomY = top;
             SetText(ref i2, new Vector2(left, top), "AGR-31 CCRP", hud, px);
             SetText(ref i2, new Vector2(left, top - 18f * px),
 
@@ -412,7 +413,7 @@ namespace RocketPod.Hud
 
             float maxRange = MaxRangeThrottled(spec, launch, aircraft, velocity);
 
-            bool designated = TryGetDesignation(aircraft, station, out Vector3 target);
+            bool designated = TryGetDesignation(aircraft, station, r.TimeOfFlight, out Vector3 target);
 
             if (designated)
             {
@@ -429,11 +430,16 @@ namespace RocketPod.Hud
                 bool inReach = maxRange > 0f && rangeToTarget <= maxRange;
                 bool onTarget = inReach && missDist <= tolerance;
 
-                PublishSolution(onTarget, inReach, missDist,
-                                SignedRangeError(launch, r.ImpactPoint, target), tolerance,
+                float signedError = SignedRangeError(launch, r.ImpactPoint, target);
+
+                PublishSolution(onTarget, inReach, missDist, signedError, tolerance,
                                 aircraft, launch, target);
 
                 Color cue = onTarget ? FireCue(hud) : hud;
+
+                AimDirector(ref i2, org, px, hud, cue, signedError, rangeToTarget,
+                            maxRange, tolerance, missDist, inReach, aircraft, launch,
+                            target, spec, velocity);
 
                 bool toScale = FootprintRing(cam, target, cep, Fade(cue, 0.85f), 1.7f * px, out float ringScale);
                 FootprintRing(cam, target, cep * 2.08f * ringScale, Fade(cue, 0.40f), 1.3f * px, out _);
@@ -451,6 +457,17 @@ namespace RocketPod.Hud
 
                     if (targetHidden) DashedPolyline(diamond, 1.8f * px, cue, 3f * px);
                     else _vec.Polyline(diamond, 1.8f * px, cue, closed: true);
+
+                    if (_hasLead && TryProject(cam, _leadFrom, out Vector2 was) &&
+                        (tgt - was).magnitude > 10f * px)
+                    {
+                        float t = 4f * px;
+                        _vec.Polyline(new[] { was - new Vector2(t, 0f), was + new Vector2(t, 0f) },
+                                      1.4f * px, Fade(cue, 0.55f));
+                        _vec.Polyline(new[] { was - new Vector2(0f, t), was + new Vector2(0f, t) },
+                                      1.4f * px, Fade(cue, 0.55f));
+                        DottedLine(was, tgt, 1.2f * px, Fade(cue, 0.5f), 4f * px, 5f * px);
+                    }
                 }
 
                 if (impactVisible)
@@ -544,15 +561,28 @@ namespace RocketPod.Hud
         private bool _loggedSampleFail;
         private float _lastLoggedHeight = float.NegativeInfinity;
 
-        private bool TryGetDesignation(Aircraft aircraft, WeaponStation station, out Vector3 target)
+        private Vector3 _leadFrom;
+        private bool _hasLead;
+
+        private bool TryGetDesignation(Aircraft aircraft, WeaponStation station,
+                                       float timeOfFlight, out Vector3 target)
         {
             target = default;
             _designationRadius = 0f;
+            _hasLead = false;
 
             Unit? locked = SelectedTarget(aircraft, station);
             if (locked != null)
             {
-                target = locked.transform.GlobalPosition().AsVector3();
+                Vector3 nowAt = locked.transform.GlobalPosition().AsVector3();
+
+                target = TargetLead.PredictPosition(locked, timeOfFlight, out _);
+
+                if ((target - nowAt).sqrMagnitude > 1f)
+                {
+                    _leadFrom = nowAt;
+                    _hasLead = true;
+                }
 
                 _designationRadius = Mathf.Max(0f, locked.maxRadius);
 
@@ -651,29 +681,50 @@ namespace RocketPod.Hud
             }
         }
 
+        private float _zoomSmoothed;
+
+        private const float ZoomDamping = 4f;
+
+        private const float MagnifierRangeMultiplier = 6f;
+
         private void Magnifier(ref int index, Camera cam, Vector3 target, float cep,
                                float missDist, float tolerance, Color cue, Color hud, float px)
         {
             if (_vec == null || !Plugin.HudMagnifier.Value) return;
 
-            float trigger = tolerance * Mathf.Max(1f, Plugin.HudMagnifierTriggerFactor.Value);
+            float trigger = tolerance * Mathf.Max(1f, Plugin.HudMagnifierTriggerFactor.Value)
+                          * MagnifierRangeMultiplier;
             if (missDist > trigger) return;
 
             if (!TryProject(cam, target, out Vector2 tgt)) return;
 
             Vector3 impactGlobal = _impactSmoothed;
-            if (!TryProject(cam, impactGlobal, out Vector2 imp)) return;
+            Vector3 impactLevelled = new Vector3(impactGlobal.x, target.y, impactGlobal.z);
+            float dh = impactGlobal.y - target.y;
+
+            if (!TryProject(cam, impactLevelled, out Vector2 imp)) return;
 
             float size = Mathf.Max(60f, Plugin.HudMagnifierPixels.Value) * px;
             float half = size * 0.5f;
 
-            var centre = MagnifierCentre(px, half);
+            var centre = MagnifierCentre(px, half, _panelBottomY);
 
             if (!TryProject(cam, target + new Vector3(cep * 2.08f, 0f, 0f), out Vector2 edge)) return;
             float outerPx = (edge - tgt).magnitude;
             if (outerPx < 1e-3f) return;
 
-            float zoom = Mathf.Clamp(half * 0.62f / outerPx, 1f, 400f);
+            float missPx = (imp - tgt).magnitude;
+            float fillRing = half * 0.62f / outerPx;
+            float fitBoth = missPx > 1e-3f ? half * 0.80f / missPx : fillRing;
+
+            float zoomWanted = Mathf.Clamp(Mathf.Min(fitBoth, fillRing), 1f, 400f);
+
+            if (_zoomSmoothed <= 0f) _zoomSmoothed = zoomWanted;
+            _zoomSmoothed = Mathf.Exp(Mathf.Lerp(
+                Mathf.Log(_zoomSmoothed), Mathf.Log(zoomWanted),
+                1f - Mathf.Exp(-ZoomDamping * Time.unscaledDeltaTime)));
+
+            float zoom = _zoomSmoothed;
 
             Vector2 Map(Vector2 p) => centre + (p - tgt) * zoom;
 
@@ -682,30 +733,51 @@ namespace RocketPod.Hud
             foreach (var (cx, cy) in new[] { (-1f, -1f), (1f, -1f), (1f, 1f), (-1f, 1f) })
             {
                 var corner = centre + new Vector2(cx * half, cy * half);
-                _vec.Line(corner, corner - new Vector2(cx * t, 0f), 1.4f * px, frame);
-                _vec.Line(corner, corner - new Vector2(0f, cy * t), 1.4f * px, frame);
+                _vec.Line(corner, corner - new Vector2(cx * t, 0f), 2.0f * px, frame);
+                _vec.Line(corner, corner - new Vector2(0f, cy * t), 2.0f * px, frame);
             }
 
-            MappedGroundRing(cam, target, cep, Map, Fade(cue, 0.9f), 1.8f * px, half, centre);
-            MappedGroundRing(cam, target, cep * 2.08f, Map, Fade(cue, 0.45f), 1.4f * px, half, centre);
+            MappedGroundRing(cam, target, cep, Map, Fade(cue, 0.95f), 2.6f * px, half, centre);
+            MappedGroundRing(cam, target, cep * 2.08f, Map, Fade(cue, 0.55f), 2.0f * px, half, centre);
 
-            float d = 6f * px;
+            float d = 7f * px;
             _vec.Polyline(new[]
             {
                 centre + new Vector2(0f, d), centre + new Vector2(d, 0f),
                 centre - new Vector2(0f, d), centre - new Vector2(d, 0f),
-            }, 1.8f * px, cue, closed: true);
+            }, 2.4f * px, cue, closed: true);
+
+            if (TryProject(cam, target + new Vector3(0f, Mathf.Max(cep, 5f), 0f), out Vector2 up))
+            {
+                Vector2 stalk = (up - tgt) * zoom;
+                float len = stalk.magnitude;
+                if (len > 1e-3f)
+                {
+
+                    Vector2 dir = stalk / len;
+                    _vec.Line(centre, centre + dir * Mathf.Min(len, half * 0.35f),
+                              1.6f * px, Fade(cue, 0.55f));
+                }
+            }
 
             Vector2 mapped = Map(imp);
             Vector2 clamped = new Vector2(
                 Mathf.Clamp(mapped.x, centre.x - half, centre.x + half),
                 Mathf.Clamp(mapped.y, centre.y - half, centre.y + half));
-            float a = 7f * px;
-            _vec.Line(clamped + new Vector2(-a, 0f), clamped + new Vector2(a, 0f), 1.9f * px, cue);
-            _vec.Line(clamped + new Vector2(0f, -a), clamped + new Vector2(0f, a), 1.9f * px, cue);
+            float a = 8f * px;
+            _vec.Line(clamped + new Vector2(-a, 0f), clamped + new Vector2(a, 0f), 2.5f * px, cue);
+            _vec.Line(clamped + new Vector2(0f, -a), clamped + new Vector2(0f, a), 2.5f * px, cue);
 
+            float ringPx = outerPx * zoom;
+            if (missPx * zoom > ringPx)
+            {
+                float lead = Mathf.InverseLerp(ringPx, ringPx * 3f, missPx * zoom);
+                _vec.Line(centre, clamped, 1.2f * px, Fade(cue, 0.20f + 0.25f * lead));
+            }
+
+            string dhText = Mathf.Abs(dh) >= 1f ? $"  dh {dh:+0;-0}" : "";
             SetText(ref index, new Vector2(centre.x - half, centre.y - half - 16f * px),
-                    $"x{zoom:0}  CEP {cep:0}", Fade(hud, 0.6f), px);
+                    $"x{zoom:0}  CEP {cep:0}  miss {missDist:0}{dhText}", Fade(hud, 0.75f), px);
         }
 
         private void MappedGroundRing(Camera cam, Vector3 centre, float radius,
@@ -793,6 +865,9 @@ namespace RocketPod.Hud
             return toScale;
         }
 
+        private const int MaxDashesPerPolyline = 2000;
+        private static bool _loggedDashBudget;
+
         private void DottedPolyline(IList<Vector2> pts, float width, Color color,
                                     float dash, float gap)
         {
@@ -800,6 +875,8 @@ namespace RocketPod.Hud
 
             float stride = Mathf.Max(1f, dash + gap);
             float phase = 0f;
+
+            int budget = MaxDashesPerPolyline;
 
             for (int i = 0; i < pts.Count - 1; i++)
             {
@@ -812,6 +889,21 @@ namespace RocketPod.Hud
                 float s = 0f;
                 while (s < len)
                 {
+                    if (--budget <= 0)
+                    {
+                        if (!_loggedDashBudget)
+                        {
+                            _loggedDashBudget = true;
+                            Plugin.Log.LogWarning(
+                                "[Tenpin] A dotted polyline hit its dash budget and was cut " +
+                                $"short ({MaxDashesPerPolyline}). That means a projected span " +
+                                "was enormous - which is the CCRP reach-arc stutter this budget " +
+                                "exists to stop - and `ReachArc`'s own clamp should have caught " +
+                                "it first. Logged once.");
+                        }
+                        return;
+                    }
+
                     float cycle = phase % stride;
                     if (cycle < dash)
                     {
@@ -851,7 +943,7 @@ namespace RocketPod.Hud
 
                 if (TryProject(cam, p, out Vector2 s))
                 {
-                    run.Add(s);
+                    run.Add(ClampToScreenBox(s));
                     continue;
                 }
                 if (run.Count > 1) DottedPolyline(run, width, color, 9f, 7f);
@@ -912,6 +1004,13 @@ namespace RocketPod.Hud
             _vec.Polyline(box, w, hud, closed: true);
         }
 
+        private static Vector2 ClampToScreenBox(Vector2 s)
+        {
+            float mx = Screen.width, my = Screen.height;
+            return new Vector2(Mathf.Clamp(s.x, -mx, 2f * mx),
+                               Mathf.Clamp(s.y, -my, 2f * my));
+        }
+
         private static bool TryProject(Camera cam, Vector3 global, out Vector2 screen)
         {
             screen = default;
@@ -955,25 +1054,104 @@ namespace RocketPod.Hud
 
         private const float BlockWidth = 330f;
 
+        private void AimDirector(ref int i, Vector2 org, float px, Color hud, Color cue,
+                                 float signedError, float rangeToTarget, float maxRange,
+                                 float tolerance, float missDist, bool inReach,
+                                 Aircraft aircraft, Vector3 launch, Vector3 target,
+                                 TrajectorySolver.RoundSpec spec, Vector3 velocity)
+        {
+            if (_vec == null || !Plugin.HudDirector.Value) return;
+
+            float now = Time.unscaledTime;
+            if (now >= _directorNextSolve)
+            {
+                _directorNextSolve = now + Mathf.Max(0.1f, Plugin.HudDirectorInterval.Value);
+
+                float? want = TrajectorySolver.SolveLaunchElevation(
+                    spec, launch, aircraft.transform.forward, velocity.magnitude,
+                    rangeToTarget, groundY: target.y, loft: true);
+
+                _directorDelta = want.HasValue ? want.Value - FlightPathAngle(aircraft) : float.NaN;
+            }
+
+            float top = org.y - ReadoutLines * LineStep * px;
+
+            string range = $"RNG {rangeToTarget / 1000f:0.0} km";
+            string reach = maxRange > 0f ? $"  MAX {maxRange / 1000f:0.0} km" : "";
+            SetText(ref i, new Vector2(org.x, top), range + reach, Fade(hud, 0.8f), px);
+
+            string error = Mathf.Abs(signedError) < 1f
+                ? "ON RANGE"
+                : (signedError > 0f ? $"SHORT {signedError:0} m" : $"LONG {-signedError:0} m");
+
+            SetText(ref i, new Vector2(org.x, top - 18f * px), error,
+                    missDist <= tolerance ? FireCue(hud) : hud, px);
+
+            if (!float.IsNaN(_directorDelta))
+            {
+                string act = Mathf.Abs(_directorDelta) < 0.2f
+                    ? "HOLD"
+                    : (_directorDelta > 0f ? $"PULL {_directorDelta:0.0} deg"
+                                           : $"PUSH {-_directorDelta:0.0} deg");
+                SetText(ref i, new Vector2(org.x, top - 36f * px), act,
+                        Mathf.Abs(_directorDelta) < 0.2f ? FireCue(hud) : cue, px);
+            }
+            else if (!inReach)
+            {
+                SetText(ref i, new Vector2(org.x, top - 36f * px), "OUT OF REACH",
+                        Warn(hud), px);
+            }
+
+            float scale = Mathf.Max(tolerance * 4f, 200f);
+            float half = 90f * px;
+            var mid = new Vector2(org.x + half, top - 58f * px);
+
+            _vec.Line(mid - new Vector2(half, 0f), mid + new Vector2(half, 0f), 1.3f * px,
+                      Fade(hud, 0.5f));
+            _vec.Line(mid - new Vector2(0f, 5f * px), mid + new Vector2(0f, 5f * px), 1.3f * px,
+                      Fade(hud, 0.7f));
+
+            float x = Mathf.Clamp(-signedError / scale, -1f, 1f) * half;
+            var caret = mid + new Vector2(x, 0f);
+            _vec.Line(caret + new Vector2(0f, 9f * px), caret - new Vector2(0f, 9f * px),
+                      2.2f * px, missDist <= tolerance ? FireCue(hud) : cue);
+        }
+
+        private static float FlightPathAngle(Aircraft aircraft)
+        {
+            Vector3 v = aircraft.rb != null ? aircraft.rb.velocity : aircraft.transform.forward;
+            var flat = new Vector3(v.x, 0f, v.z);
+            if (flat.sqrMagnitude < 1e-4f) return 0f;
+            return Mathf.Atan2(v.y, flat.magnitude) * Mathf.Rad2Deg;
+        }
+
+        private float _directorNextSolve;
+        private float _directorDelta = float.NaN;
+
+        private const float LineStep = 18f;
+
+        private const int ReadoutLines = 5;
+
         private void TiltIndicator(ref int i, Vector2 org, Color hud, float px)
         {
             var parts = new List<string>(2);
             bool live = false;
 
-            if (WeaponManager_Fire_ReleaseAssistPatch.Armed) parts.Add("AUTO");
+            if (WeaponManager_Fire_ReleaseAssistPatch.Armed) parts.Add("AUTO RELEASE");
 
             if (Plugin.TiltAssist.Value &&
                 PilotPlayerState_PlayerAxisControls_TiltAssistPatch.Armed)
             {
                 live = PilotPlayerState_PlayerAxisControls_TiltAssistPatch.Engaged;
-                parts.Add(live ? "TILT" : "TILT ARMED");
+
+                parts.Add(live ? "AUTO PITCH: ON" : "AUTO PITCH: READY");
             }
 
             if (parts.Count == 0) return;
 
-            SetText(ref i, org + new Vector2(0f, 18f * px),
-                    string.Join("  ", parts.ToArray()),
-                    live ? FireCue(hud) : Fade(hud, 0.6f), px);
+            SetText(ref i, org + new Vector2(0f, 22f * px),
+                    string.Join("   ", parts.ToArray()),
+                    live ? FireCue(hud) : Fade(hud, 0.75f), px);
         }
 
         private static Vector2 PanelOrigin(float px)
@@ -994,10 +1172,13 @@ namespace RocketPod.Hud
             };
         }
 
-        private static Vector2 MagnifierCentre(float px, float half)
+        private static Vector2 MagnifierCentre(float px, float half, float panelBottomY)
         {
             Vector2 origin = PanelOrigin(px);
-            float y = origin.y - (90f * px) - half;
+
+            float below = Mathf.Min(panelBottomY - 22f * px, origin.y - 90f * px);
+
+            float y = below - half;
             y = Mathf.Max(y, half + 20f * px);
             return new Vector2(origin.x + half, y);
         }
@@ -1080,14 +1261,9 @@ namespace RocketPod.Hud
 
             try
             {
-                if (_fEjection == null) return 0f;
                 foreach (Weapon w in station.Weapons)
                 {
-                    if (w is MissileLauncher ml &&
-                        _fEjection.GetValue(ml) is Vector3 v)
-                    {
-                        return v.z;
-                    }
+                    if (w is TenpinLauncher tl) return tl.ejectionVelocity.z;
                 }
             }
             catch {  }
@@ -1166,8 +1342,14 @@ namespace RocketPod.Hud
             rt.pivot = Vector2.zero;
         }
 
+        private float _panelOriginX = float.NaN;
+        private float _panelBottomY;
+
         private void SetText(ref int index, Vector2 at, string content, Color color, float px)
         {
+            if (!float.IsNaN(_panelOriginX) && Mathf.Abs(at.x - _panelOriginX) < 1f)
+                _panelBottomY = Mathf.Min(_panelBottomY, at.y);
+
             TextMeshProUGUI? t = TextAt(index);
             if (t == null) { index++; return; }
 
@@ -1192,6 +1374,12 @@ namespace RocketPod.Hud
                 t.font = font;
                 t.raycastTarget = false;
                 t.alignment = TextAlignmentOptions.BottomLeft;
+
+                t.fontStyle = FontStyles.Bold;
+                Material mat = t.fontMaterial;
+                mat.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.16f);
+                mat.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0f, 0f, 0f, 0.85f));
+                mat.SetFloat(ShaderUtilities.ID_FaceDilate, 0.08f);
                 t.enableWordWrapping = false;
 
                 RectTransform rt = t.rectTransform;

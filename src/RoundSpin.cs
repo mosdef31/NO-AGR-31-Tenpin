@@ -9,6 +9,9 @@ namespace RocketPod
     {
         private float _angle;
 
+        internal static bool IsDisplayRound(Missile missile) =>
+            !missile.NetworkownerID.IsValid;
+
         internal static void Apply(Missile missile)
         {
             if (!Plugin.SpinRounds.Value) return;
@@ -60,6 +63,8 @@ namespace RocketPod
             {
                 if (__instance.definition == null ||
                     __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+
+                if (RoundSpin.IsDisplayRound(__instance)) return;
 
                 RoundSpin.Apply(__instance);
             }

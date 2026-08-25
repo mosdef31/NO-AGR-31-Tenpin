@@ -17,11 +17,6 @@ namespace RocketPod
         private const float PitchLow = 0.95f;
         private const float PitchHigh = 1.05f;
 
-        private static readonly FieldInfo? _fLaunchSound =
-            AccessTools.Field(typeof(MissileLauncher), "launchSound");
-        private static readonly FieldInfo? _fLaunchTransform =
-            AccessTools.Field(typeof(MissileLauncher), "launchTransform");
-
         private static AudioSource[]? _pool;
         private static int _next;
         private static bool _resolved;
@@ -29,15 +24,17 @@ namespace RocketPod
         private static AudioMixerGroup? _mixer;
         private static bool _playedLogged;
 
-        internal static void Report(MissileLauncher launcher)
+        internal static void Report(TenpinLauncher launcher, Transform? tube)
         {
 
-            if (_fLaunchSound?.GetValue(launcher) as AudioSource != null) return;
+            if (!Plugin.UseStockEffects.Value) return;
+
+            if (launcher.launchSound != null) return;
 
             if (!Resolve()) return;
             if (_pool == null || _clip == null) return;
 
-            Transform at = _fLaunchTransform?.GetValue(launcher) as Transform ?? launcher.transform;
+            Transform at = tube != null ? tube : launcher.transform;
 
             AudioSource src = _pool[_next];
             _next = (_next + 1) % _pool.Length;
@@ -140,8 +137,7 @@ namespace RocketPod
 
         private static IEnumerable<AudioSource> MotorSources()
         {
-            Encyclopedia? enc = null;
-            enc = GameData.EncyclopediaOrNull();
+            Encyclopedia? enc = GameData.EncyclopediaOrNull();
             if (enc?.missiles == null) yield break;
 
             FieldInfo? fMotors = AccessTools.Field(typeof(Missile), "motors");
@@ -170,8 +166,7 @@ namespace RocketPod
 
         private static IEnumerable<AudioClip> GunClips()
         {
-            Encyclopedia? enc = null;
-            enc = GameData.EncyclopediaOrNull();
+            Encyclopedia? enc = GameData.EncyclopediaOrNull();
             if (enc?.weaponMounts == null) yield break;
 
             FieldInfo? fFireSounds = AccessTools.Field(typeof(Gun), "fireSounds");
@@ -260,27 +255,6 @@ namespace RocketPod
             {
                 Plugin.Log.LogError(
                     $"[Tenpin] Flight audio failed (the rocket still flies): {ex}");
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(MissileLauncher), nameof(MissileLauncher.Fire))]
-    internal static class MissileLauncher_Fire_AudioPatch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(MissileLauncher __instance)
-        {
-            try
-            {
-                if (__instance.info == null ||
-                    __instance.info.weaponName != PluginInfo.WeaponInfoName) return;
-
-                LaunchAudio.Report(__instance);
-            }
-            catch (Exception ex)
-            {
-                Plugin.Log.LogError(
-                    $"[Tenpin] Launch audio failed (the rocket still fires): {ex}");
             }
         }
     }
