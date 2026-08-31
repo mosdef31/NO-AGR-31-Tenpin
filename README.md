@@ -220,6 +220,6 @@ and develop them. Every decision, every number, and everything that ships is min
 It is not a checkout you can build: the project file, the asset bundle and the local game
 path are not here.
 
-The rocket model is not my work, and the credit is a licence condition rather than a
-courtesy. See [`ATTRIBUTION.md`](./ATTRIBUTION.md) for whose it is and what the licence
-requires.
+Two of the models here are not my work, and the credit is a licence condition rather than
+a courtesy. See [`ATTRIBUTION.md`](./ATTRIBUTION.md) for whose they are and what the
+licence requires.

@@ -61,11 +61,13 @@ namespace RocketPod
             {
                 if (!Legal(option, hq)) continue;
 
-                int rounds = PluginInfo.RoundsFor(option.jsonKey);
+                PluginInfo.MountSpec? spec = PluginInfo.SpecFor(option.jsonKey);
+                if (spec == null) continue;
+
+                int rounds = spec.Value.Rounds;
                 if (rounds <= 0) continue;
 
-                bool isDrum = option.jsonKey == PluginInfo.MountKey18;
-                if (hex == isDrum) continue;
+                if (hex != spec.Value.HexFamily) continue;
 
                 if (rounds > bestRounds)
                 {

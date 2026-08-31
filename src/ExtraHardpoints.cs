@@ -175,8 +175,9 @@ namespace RocketPod
                     {
                         if (m == null) continue;
 
-                        bool isDrum = m.jsonKey == PluginInfo.MountKey18;
-                        if (!both && !isDrum) continue;
+                        PluginInfo.MountSpec? mountSpec = PluginInfo.SpecFor(m.jsonKey);
+                        if (mountSpec == null) continue;
+                        if (!both && mountSpec.Value.HexFamily) continue;
 
                         if (s.weaponOptions.Contains(m)) { alreadyThere++; continue; }
 

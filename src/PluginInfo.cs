@@ -121,20 +121,23 @@ namespace RocketPod
 
             internal readonly string RoundKey;
 
-            internal MountSpec(string jsonKey, int rounds, float flush, string shape, string roundKey)
+            internal readonly bool HexFamily;
+
+            internal MountSpec(string jsonKey, int rounds, float flush, string shape,
+                               string roundKey, bool hexFamily)
             {
                 JsonKey = jsonKey; Rounds = rounds; FlushOffset = flush; Shape = shape;
-                RoundKey = roundKey;
+                RoundKey = roundKey; HexFamily = hexFamily;
             }
         }
 
         internal static readonly MountSpec[] Mounts =
         {
-            new MountSpec(MountKey,   Rounds,   -0.3332f / 2f, "7-tube hex, 333 mm across flats",   MissileKey),
-            new MountSpec(MountKey19, Rounds19, -0.5141f / 2f, "19-tube hex, 514 mm across flats",  MissileKey),
-            new MountSpec(MountKey18, Rounds18, -0.570f / 2f,  "18-tube fast-jet drum, 570 mm diameter", MissileKey),
+            new MountSpec(MountKey,   Rounds,   -0.3332f / 2f, "7-tube hex, 333 mm across flats",   MissileKey,   true),
+            new MountSpec(MountKey19, Rounds19, -0.5141f / 2f, "19-tube hex, 514 mm across flats",  MissileKey,   true),
+            new MountSpec(MountKey18, Rounds18, -0.570f / 2f,  "18-tube fast-jet drum, 570 mm diameter", MissileKey, false),
 
-            new MountSpec(MountKey51, Rounds51, -0.406f / 2f,  "4-tube square, 406 mm tall x 357 mm wide", MissileKey51),
+            new MountSpec(MountKey51, Rounds51, -0.406f / 2f,  "4-tube square, 406 mm tall x 357 mm wide", MissileKey51, false),
         };
 
         internal static MountSpec? SpecFor(string? jsonKey)

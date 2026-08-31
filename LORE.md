@@ -1,7 +1,7 @@
-# AGR-31 Tenpin
+# AGR-31 Tenpin and AGR-51 Strike
 
-Flavour and employment doctrine. Everything here matches what the weapon actually
-does in game.
+Flavour and employment doctrine for both weapons in the pack. Everything here
+matches what they actually do in game.
 
 ## The name
 
@@ -92,6 +92,11 @@ Everything around it is new:
   composite shroud, in seven and nineteen tube variants. It is lighter, it is cheaper
   to make than the drum was, and the flats give a mounting face the old cylinder never
   had.
+- **And then a drum again.** The hex pods were sized for aircraft that loiter. Fast
+  jets wanted volume more than they wanted a flat mounting face, so the Combine went
+  back to a cylinder for them: an eighteen tube composite drum, two rings around a
+  solid axis with no centre tube. It carries more than twice what the seven does, and
+  it is the pod the fast movers are actually issued.
 - **Hardening.** The rounds are built to survive being shot at, in the specific and
   limited sense that a defence has to commit more than one interceptor to be confident
   of a kill. Against a magazine, that is worth more than speed.
@@ -99,6 +104,42 @@ Everything around it is new:
 What was deliberately not changed: the warhead is small, the round is not accurate on
 its own, and neither of those is going to be fixed. They are the reason the thing is
 affordable.
+
+## The AGR-51 Strike
+
+The Strike is what happened when a customer read the Tenpin's sales case and asked the
+obvious follow up question: if the argument is that a rocket without a seeker is worth
+buying, why is the rocket small?
+
+**It is not a Tenpin and it is not a refurbishment.** The Tenpin's whole economy is that
+the rounds already existed. Nothing about the Strike already existed. It is a new 133 mm
+round, designed and built from nothing on the Tenpin's production line, and it costs what
+a new weapon costs. The Combine was open about that and sold it anyway, on the argument
+that a customer who has accepted the logic of an unguided standoff rocket will eventually
+want one that can hurt something.
+
+**What it does that the Tenpin cannot.** The Strike carries five times the blast charge
+and enough penetration to matter against armour, so it is not confined to soft targets in
+the open. It reaches twenty five kilometres rather than twenty. And it holds a line better
+than the light round does, because at seventy kilogrammes a rocket has enough inertia that
+the tube stops dictating where it goes.
+
+**What it gives up.** Four rounds a pod. The Tenpin's argument is saturation, and four of
+anything does not saturate. The Strike is not fired at a battery in the hope of
+overwhelming it; it is fired at a thing, with the expectation that one or two of the four
+will hit it. That is a completely different weapon wearing a similar shape, and crews who
+treat a Strike pod as a small Tenpin pod waste it.
+
+**The fins are the visible difference.** A 133 mm round with a fin span most of a metre
+across will not fit down a tube it can be fired from, so the Strike's four blades lie
+folded along the body inside the pod and snap out once the round is clear. The Tenpin
+never needed this and was never given it, which is why the Tenpin's tubes are wider than
+its rocket and the Strike's are not. It is also the one part of the design the
+refurbishment line could not have produced, and the Combine is quietly proud of it.
+
+**A square pod, not a hex and not a drum.** Four rounds in a two by two block inside a
+rounded square shroud. At four tubes neither of the other packings buys anything, and a
+flat top is the easiest thing in the world to hang off a pylon.
 
 ## Doctrine
 
@@ -127,12 +168,25 @@ the entire advantage.
 costs it less, so a high fast launch reaches nearly twice as far as a low slow one.
 Crews are expected to know this. The reference figures are quoted at 1500 m.
 
+**The Strike is aimed, not poured.** Everything above about full salvos and magazines is
+Tenpin doctrine and none of it carries over. Four rounds are a considered expenditure at
+sixty thousand each, and the correct use of a Strike pod is a designated target, a good
+solution, and as many rounds as that target is worth. Ripple the pod at a battery and you
+have spent a quarter of a million on suppression that the cheaper weapon does better.
+
 ## Carriage
 
 The pods were qualified on the A-19 first, and that is the aircraft they were bought
 for. They fit the CAS pylons of several other airframes, including two helicopters
 and two trainers, for the unromantic reason that those pylons were already cut for the
 AGR-24.
+
+**Which pod goes on what is a question about speed.** Aircraft that loiter and shoot what
+they can see are offered the hex pods, because a short light pod is a sensible thing to
+hang on an aeroplane that is going to be over the target anyway. Anything faster is
+launching from standoff, and standoff means the eighteen tube drum or the Strike. Those
+two travel together: they are the same tactic at two weights, and an airframe cleared to
+loft one is cleared to loft the other.
 
 **Qualified is not the same as suited.** The helicopters can carry it and it is a poor
 weapon from them: a hovering launch inherits almost no velocity, cannot loft, and
@@ -153,6 +207,10 @@ artillery.
   spread wider than the pattern absorbs a full salvo and keeps working.
 - **Do not spend interceptors on it.** The correct answer to a Tenpin salvo, and the
   hardest one to give under fire, is usually to let it land.
+- **Do spend them on a Strike.** That advice inverts for the heavy round, and telling
+  the two apart in the air is the whole problem. Four inbound rather than eighteen is
+  the tell. Four is worth engaging: the salvo is small enough to be shot down
+  completely, and every round that gets through does real damage.
 
 ## Service notes
 
@@ -167,3 +225,9 @@ all of one kind: they are eighty year old rounds.
 - There is no lot traceability for anything manufactured before the merger. The
   Combine has been asked to provide it and has explained, patiently and more than
   once, that the records were destroyed by the war the rockets were built for.
+
+The Strike has none of those problems and one of its own. Every round is new, every lot
+is traceable, and the fin mechanism is the only moving part on either weapon. Armourers
+are told not to test it by hand. The blades are held folded by the tube wall rather than
+by a catch, so a round out of its pod is a round with nothing holding its fins in, and
+the mechanism does not care whether it is being watched or fired.

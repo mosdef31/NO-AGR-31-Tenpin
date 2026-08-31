@@ -145,6 +145,48 @@ namespace RocketPod
             }
         }
 
+        private static void CheckFlightMass(Missile missile, Rigidbody? rb, WeaponInfo? info,
+                                            List<string> ok, List<string> fail)
+        {
+            if (typeof(Missile).GetField("mass", Inst)?.GetValue(missile) is not float mass)
+            {
+                fail.Add("Missile.mass could not be read, so the round's flight mass is unknown. " +
+                         "Re-check the decompile against this game build.");
+                return;
+            }
+
+            if (mass <= 0f)
+            {
+                fail.Add($"Missile.mass is {mass:0.##} on the rocket prefab. StartMissile copies it " +
+                         "over the Rigidbody's mass on every launch, so the round would fly at that " +
+                         "mass whatever the Rigidbody says.");
+                return;
+            }
+
+            if (info != null && info.massPerRound > 0f &&
+                Mathf.Abs(info.massPerRound - mass) > 0.01f)
+            {
+                fail.Add($"the round FLIES at {mass:0.##} kg (Missile.mass) but is CARRIED as " +
+                         $"{info.massPerRound:0.##} kg (WeaponInfo.massPerRound). StartMissile does " +
+                         "`rb.mass = mass`, so Missile.mass is the only one the flight model sees " +
+                         "and massPerRound is the only one the loadout sees. Every range figure in " +
+                         "the mod is solved for the carriage mass, so while these disagree the " +
+                         "round does not fly the trajectory anything predicts for it. Set " +
+                         $"Missile.mass to {info.massPerRound:0.##} on the rocket prefab and " +
+                         "re-export the bundle.");
+            }
+            else if (rb != null && Mathf.Abs(rb.mass - mass) > 0.01f)
+            {
+
+                ok.Add($"round flies at {mass:0.##} kg (Missile.mass); the Rigidbody's " +
+                       $"{rb.mass:0.##} kg is overwritten by StartMissile and does not matter.");
+            }
+            else
+            {
+                ok.Add($"round flies at {mass:0.##} kg, which is what it is carried as.");
+            }
+        }
+
         private static float MotorFloat(object stage, string field)
         {
             FieldInfo? f = stage.GetType().GetField(field, Inst);
@@ -550,6 +592,7 @@ namespace RocketPod
 
                         CheckMotors(missile, ok, fail);
                         CheckFlightModel(missile, ok, fail);
+                        CheckFlightMass(missile, rb, mount.info, ok, fail);
                     }
 
                     var seeker = flying.GetComponentInChildren<MissileSeeker>();
