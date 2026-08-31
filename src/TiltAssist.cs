@@ -173,7 +173,7 @@ namespace RocketPod
         {
             WeaponStation? station = aircraft.weaponManager?.currentWeaponStation;
             return station?.WeaponInfo != null &&
-                   station.WeaponInfo.weaponName == PluginInfo.WeaponInfoName;
+                   PluginInfo.IsOurWeaponName(station.WeaponInfo.weaponName);
         }
     }
 }

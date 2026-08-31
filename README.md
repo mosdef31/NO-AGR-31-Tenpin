@@ -26,12 +26,16 @@
 | AGR-31 Tenpin x7 | 7 | 225 kg | 50 kg | $175k |
 | AGR-31 Tenpin x18 | 18 | 565 kg | 115 kg | $450k |
 | AGR-31 Tenpin x19 | 19 | 580 kg | 105 kg | $475k |
+| AGR-51 Strike x4 | 4 | 315 kg | 55 kg | $240k |
 
 - **AGR-31 Tenpin x7:** the light hex pod. Fits anything, including the stub pylons on a
   helicopter.
 - **AGR-31 Tenpin x18:** the fast-jet drum. Slimmer, and the one the Shrike, King Viper,
   Compass and Vagrant carry.
 - **AGR-31 Tenpin x19:** the heavy hex pod. The most rockets you can put on one pylon.
+- **AGR-51 Strike x4:** a different weapon, not another pod. Four 133 mm rockets with
+  five times the warhead of a 90 mm one, on the same aircraft as the x18. Their fins are
+  folded in the tube and swing out just after launch.
 
 They all fire the same unguided 90 mm rocket, which reaches a great deal further than the
 stock ones. Load six pods on an A-19 and you put 42 rockets in the air in about three
@@ -50,6 +54,19 @@ single hard target. The AGR-24 is still the better answer to a tank.
 | Accuracy | 1.5 mrad, so the spread grows with range |
 | Rate | one rocket every 0.08 s |
 | Cost | $25k a rocket |
+
+And the AGR-51 Strike:
+
+| | |
+|---|---|
+| Rocket | 133 mm, 2.1 m, folding fins |
+| Motor | 1.8 second burn |
+| Warhead | 50 blast, 900 AP |
+| Weight | 65 kg a rocket |
+| Cost | $60k a rocket |
+
+Four rounds is the whole of it. There is no second salvo and no saturating anything, so
+each one has to be aimed. It uses the same HUD as the AGR-31.
 
 Range depends a lot on how you launch. Fired from 500 m you get about 18 km; from 10 km
 you get about 35 km, because the rocket keeps your speed and thin air slows it less. The
@@ -141,7 +158,8 @@ the rocket and cannot point the nose up, so you throw away most of the range.
 
 ## Install
 
-You need **Nuclear Option 0.34**, **BepInEx 5.4.x**, and **Blueprinter 1.8.21**.
+You need **Nuclear Option 0.34**, **BepInEx 5.4.x**, and **Blueprinter**. This build
+was made and flown against Blueprinter **2.0.0**.
 Blueprinter is not optional; without it the mod does not load at all and you will see
 nothing from it in the log.
 

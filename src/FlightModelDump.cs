@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using Shared.Ballistics;
 
 namespace RocketPod
 {
@@ -27,14 +28,15 @@ namespace RocketPod
             public readonly float Torque;
             public readonly Vector3 PID;
             public readonly float GLimit;
+            public readonly float MaxTurnRate;
 
             public Row(string key, float mass, float finArea, float cd0, int dragKeys,
                        float liftAt10, int liftKeys, float supersonic, float torque,
-                       Vector3 pid, float gLimit)
+                       Vector3 pid, float gLimit, float maxTurnRate)
             {
                 Key = key; Mass = mass; FinArea = finArea; Cd0 = cd0; DragKeys = dragKeys;
                 LiftAt10 = liftAt10; LiftKeys = liftKeys; Supersonic = supersonic;
-                Torque = torque; PID = pid; GLimit = gLimit;
+                Torque = torque; PID = pid; GLimit = gLimit; MaxTurnRate = maxTurnRate;
             }
 
             public float DragPerMass => Mass > 0f ? Cd0 * FinArea / Mass : 0f;
@@ -61,7 +63,7 @@ namespace RocketPod
                     if (m == null) continue;
 
                     Row row = Read(md.jsonKey ?? md.name, m);
-                    if (md.jsonKey == PluginInfo.MissileKey) ours = row;
+                    if (PluginInfo.IsOurRound(md.jsonKey)) ours = row;
                     else rows.Add(row);
                 }
 
@@ -155,6 +157,7 @@ namespace RocketPod
             $"Cd0={r.Cd0,6:0.###}({r.DragKeys}k) lift@10deg={r.LiftAt10,6:0.###}({r.LiftKeys}k) " +
             $"ssDrag={r.Supersonic,5:0.##} torque={r.Torque,7:0.##} " +
             $"PID=({r.PID.x:0.##},{r.PID.y:0.##},{r.PID.z:0.##}) gLimit={r.GLimit,5:0.#} " +
+            $"maxTurnRate={r.MaxTurnRate,5:0.#} " +
             $"dragPerMass={r.DragPerMass:0.000e+0}";
 
         private static Row Read(string key, Missile m)
@@ -174,6 +177,8 @@ namespace RocketPod
             float torque = Float(m, "torque");
             float gLimit = Float(m, "gLimit");
 
+            float maxTurnRate = Float(m, "maxTurnRate");
+
             Vector3 pid = Vector3.zero;
             object? factors = typeof(Missile).GetField("PIDFactors", Inst)?.GetValue(m);
             if (factors != null &&
@@ -189,7 +194,7 @@ namespace RocketPod
             float liftAt10 = liftKeys > 0 ? lift!.Evaluate(10f * Mathf.Deg2Rad) : 0f;
 
             return new Row(key, mass, finArea, cd0, dragKeys, liftAt10, liftKeys,
-                           supersonic, torque, pid, gLimit);
+                           supersonic, torque, pid, gLimit, maxTurnRate);
         }
 
         private static float Float(Missile m, string field)

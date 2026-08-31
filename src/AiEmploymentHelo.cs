@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using RocketPod.Ballistics;
+using Shared.Ballistics;
 using UnityEngine;
 
 namespace RocketPod
@@ -88,7 +89,7 @@ namespace RocketPod
 
                 WeaponStation station = manager.currentWeaponStation;
                 if (station == null || station.WeaponInfo == null) return true;
-                if (station.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return true;
+                if (!PluginInfo.IsOurWeaponName(station.WeaponInfo.weaponName)) return true;
                 if (station.Ammo <= 0) return true;
 
                 Unit target = t.Field<Unit>("currentTarget").Value;
@@ -268,7 +269,7 @@ namespace RocketPod
 
                 TrajectorySolver.Result r = TerrainImpact.Solve(
                     spec, here, velocity, Plugin.AiSolverStepScale.Value,
-                    AimpointChannel.TrySampleGroundHeight);
+                    AimpointChannel.TrySampleGroundHeight, Plugin.SampleTerrainHeight.Value);
 
                 if (!r.Hit) return false;
 

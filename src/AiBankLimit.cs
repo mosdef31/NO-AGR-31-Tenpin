@@ -34,7 +34,7 @@ namespace RocketPod
 
                 WeaponStation station = aircraft.weaponManager.currentWeaponStation;
                 if (station == null || station.WeaponInfo == null) return;
-                if (station.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return;
+                if (!PluginInfo.IsOurWeaponName(station.WeaponInfo.weaponName)) return;
                 if (station.Ammo <= 0) return;
 
                 bankAllowed = Plugin.AiMaxBankDegrees.Value;

@@ -9,7 +9,9 @@ namespace RocketPod
     [HarmonyPatch(typeof(UnitMapIcon), "SetIcon")]
     internal static class UnitMapIcon_SetIcon_RoundIconPatch
     {
-        private static Sprite? _sprite;
+
+        private static readonly System.Collections.Generic.Dictionary<string, Sprite> _sprites =
+            new System.Collections.Generic.Dictionary<string, Sprite>();
         private static bool _logged;
 
         private static readonly System.Reflection.FieldInfo? F_orient
@@ -36,12 +38,14 @@ namespace RocketPod
                         $"unit '{unit.unitName}', definition '{unit.definition.unitName}', " +
                         $"sprite '{unit.definition.mapIcon?.name ?? "NULL"}', " +
                         $"mapIconSize {unit.definition.mapIconSize:0.##}, " +
-                        $"ours={(unit.definition.unitName == PluginInfo.MissileUnitName)}");
+                        $"ours={(PluginInfo.IsOurUnitName(unit.definition.unitName))}");
                 }
 
-                if (unit.definition.unitName != PluginInfo.MissileUnitName) return;
+                PluginInfo.WeaponSpec? spec =
+                    PluginInfo.WeaponForUnitName(unit.definition.unitName);
+                if (spec == null) return;
 
-                Sprite dart = RoundSprite();
+                Sprite dart = RoundSprite(spec.Value);
 
                 float hadSize = unit.definition.mapIconSize;
 
@@ -83,9 +87,11 @@ namespace RocketPod
             return current * (IconSize / hadSize);
         }
 
-        private static Sprite RoundSprite()
+        private static Sprite RoundSprite(PluginInfo.WeaponSpec spec)
         {
-            if (_sprite != null) return _sprite;
+
+            if (_sprites.TryGetValue(spec.RoundKey, out Sprite cached) && cached != null)
+                return cached;
 
             const int size = 32;
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, mipChain: false)
@@ -95,9 +101,11 @@ namespace RocketPod
             };
 
             var pixels = new Color32[size * size];
-            const float halfWidth = 6f;
             const float noseY = 27f;
             const float tailY = 5f;
+
+            float halfWidth = Mathf.Clamp(
+                spec.MapMarkAspect * (noseY - tailY), 2f, size * 0.5f - 1f);
 
             for (int y = 0; y < size; y++)
             {
@@ -124,8 +132,11 @@ namespace RocketPod
             tex.SetPixels32(pixels);
             tex.Apply(updateMipmaps: false);
 
-            _sprite = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
-            return _sprite;
+            Sprite made = Sprite.Create(tex, new Rect(0f, 0f, size, size),
+                                        new Vector2(0.5f, 0.5f));
+            made.name = "TenpinMapMark_" + spec.ShortName;
+            _sprites[spec.RoundKey] = made;
+            return made;
         }
     }
 }

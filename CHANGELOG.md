@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0 - 2026-08-31
+
+- **A second weapon, the AGR-51 Strike.** A four round pod firing a 133 mm rocket, where
+  the AGR-31 fires a 90 mm one. The rounds are five times the warhead and two and a half
+  times the weight, so a pod holds four instead of seven to nineteen. It goes on the same
+  aircraft the 18 shot drum does.
+  It reaches about 25 km from a fast pass, where the AGR-31 reaches about 20.
+- **The Strike's fins fold.** The rounds sit flush inside their tubes and the fins swing
+  out a moment after launch, once the round is clear of the pod.
+- **Rockets that hit water are no longer left in it.** They sometimes failed to go off,
+  passed through the surface and kept going, and enough of them at once stuttered the
+  game badly. Any rocket that ends up under water is now made to go off, or removed if it
+  will not.
+
+## 1.1.1 - 2026-08-26
+
+- **The pods show their rocket count in the loadout list again.** All three read
+  "AGR-31 Tenpin" with nothing after it, so the 7, 18 and 19 shot pods could not be told
+  apart in the dropdown.
+
 ## 1.1.0 - 2026-08-25
 
 - **A third pod, the AGR-31 Tenpin x18.** A slimmer 18 shot drum for fast jets. The

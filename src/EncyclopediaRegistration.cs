@@ -34,8 +34,12 @@ namespace RocketPod
     {
 
         private static readonly List<WeaponMount> _mounts = new List<WeaponMount>();
+
+        private static readonly List<MissileDefinition> _defs = new List<MissileDefinition>();
+
         private static MissileDefinition? _def;
-        private static bool _resolveAttempted;
+
+        private static int _resolveAttempts;
         private static bool _addedLogged;
 
         internal static IList<WeaponMount> ResolvedMounts => _mounts;
@@ -45,6 +49,8 @@ namespace RocketPod
             ?? _mounts.FirstOrDefault();
 
         internal static MissileDefinition? ResolvedMissile => _def;
+
+        internal static IList<MissileDefinition> ResolvedMissiles => _defs;
 
         internal static void EnsureInLists(Encyclopedia enc)
         {
@@ -61,9 +67,11 @@ namespace RocketPod
                 added = true;
             }
 
-            if (_def != null && enc.missiles != null && !ContainsMissile(enc, _def))
+            foreach (MissileDefinition d in _defs)
             {
-                enc.missiles.Add(_def);
+                if (d == null || enc.missiles == null) continue;
+                if (ContainsMissile(enc, d)) continue;
+                enc.missiles.Add(d);
                 added = true;
             }
 
@@ -71,7 +79,7 @@ namespace RocketPod
             {
                 StoreCard.Detach(mount);
                 ApplyMountFieldsInitializeSkips(mount);
-                StoreCard.Apply(mount, _def);
+                StoreCard.Apply(mount, DefinitionFor(mount));
             }
 
             if (added && !_addedLogged)
@@ -81,9 +89,20 @@ namespace RocketPod
                     .Where(m => m != null)
                     .Select(m => $"'{m.jsonKey}' x{m.ammo}")
                     .ToArray());
+
+                Plugin.Log.LogInfo(
+                    "[Tenpin] Registered from the DLL prefix, which runs before the manifest's " +
+                    "OpAddToEncyclopedia gets its turn. Blueprinter will log one 'Duplicate ... " +
+                    "JSON key' line per entry immediately afterwards; that is it finding our " +
+                    "assets already present, not failing to add them. Either path alone is " +
+                    "sufficient - see GOTCHAS.md.");
+
                 Plugin.Log.LogInfo(
                     $"[Tenpin] Registered into Encyclopedia - {_mounts.Count} mount(s): {list}; " +
-                    $"missileDef '{_def?.jsonKey}'. AfterLoad's rebuild will index them.");
+                    $"{_defs.Count} rocket(s): " +
+                    string.Join(", ", _defs.Where(d => d != null)
+                                           .Select(d => $"'{d.jsonKey}'").ToArray()) +
+                    ". AfterLoad's rebuild will index them.");
             }
         }
 
@@ -140,7 +159,41 @@ namespace RocketPod
             if (mount == null || !PluginInfo.IsOurMount(mount.jsonKey)) return;
             StoreCard.Detach(mount);
             ApplyMountFieldsInitializeSkips(mount);
-            StoreCard.Apply(mount, _def);
+            StoreCard.Apply(mount, DefinitionFor(mount));
+        }
+
+        internal static MissileDefinition? DefinitionFor(WeaponMount? mount)
+        {
+
+            if (mount == null) return null;
+
+            PluginInfo.MountSpec? spec = PluginInfo.SpecFor(mount.jsonKey);
+            if (spec == null)
+            {
+                WarnOnce($"nodef:spec:{mount.jsonKey}",
+                    $"[Tenpin] Mount '{mount.jsonKey}' is in the bundle but has no MountSpec row, " +
+                    "so there is no way to know which rocket it fires. Add it to " +
+                    "PluginInfo.Mounts. Its store card will stay blank until then.");
+                return null;
+            }
+
+            foreach (MissileDefinition d in _defs)
+                if (d != null && d.jsonKey == spec.Value.RoundKey) return d;
+
+            WarnOnce($"nodef:round:{mount.jsonKey}",
+                $"[Tenpin] Mount '{mount.jsonKey}' fires '{spec.Value.RoundKey}', which is not among " +
+                $"the {_defs.Count} MissileDefinition(s) resolved so far. If this is the last word on " +
+                "it the store card stays blank; if it clears on a later pass it was the bundle not " +
+                "being resident yet.");
+            return null;
+        }
+
+        private static readonly HashSet<string> _warnedOnce = new HashSet<string>();
+
+        private static void WarnOnce(string key, string message)
+        {
+            if (!_warnedOnce.Add(key)) return;
+            Plugin.Log.LogWarning(message);
         }
 
         private static void ApplyMountFieldsInitializeSkips(WeaponMount? mount)
@@ -197,32 +250,20 @@ namespace RocketPod
         private static bool TryResolveAssets()
         {
             if (_mounts.Count > 0) return true;
-            if (_resolveAttempted && _mounts.Count == 0) return false;
-            _resolveAttempted = true;
+
+            _resolveAttempts++;
 
             _mounts.AddRange(FindLoadedBundleAssets<WeaponMount>(PluginInfo.MountAssetFragment));
-            _def = FindLoadedBundleAsset<MissileDefinition>(PluginInfo.MissileDefAssetFragment);
+            _defs.AddRange(FindLoadedBundleAssets<MissileDefinition>(
+                PluginInfo.MissileDefAssetFragment));
+            _def = _defs.FirstOrDefault(d => d != null && d.jsonKey == PluginInfo.MissileKey)
+                   ?? _defs.FirstOrDefault();
 
             if (_mounts.Count == 0)
             {
-                AssetBundle? bundle = TryLoadBundleFromDisk();
-                if (bundle != null)
-                {
-                    _mounts.AddRange(bundle.LoadAllAssets<WeaponMount>().Where(m => m != null));
-                    if (_def == null) _def = bundle.LoadAllAssets<MissileDefinition>().FirstOrDefault();
-                    if (_mounts.Count > 0)
-                    {
-                        Plugin.Log.LogWarning(
-                            $"[Tenpin] Loaded {PluginInfo.BundleName} straight from disk because it was not " +
-                            "already resident. NetworkIdentity PrefabHashes may be unassigned, which " +
-                            "Blueprinter normally does, so multiplayer spawning could fail. Check the " +
-                            "bundle is in BepInEx/plugins and that Blueprinter is installed.");
-                    }
-                }
-            }
 
-            if (_mounts.Count == 0)
-            {
+                if (_resolveAttempts < 3) return false;
+
                 Plugin.Log.LogError(
                     "[Tenpin] Could not resolve the WeaponMount from any loaded bundle or from disk. " +
                     $"Expected a bundle asset whose path contains '{PluginInfo.MountAssetFragment}'. " +
@@ -244,7 +285,8 @@ namespace RocketPod
             {
                 NormalizeJsonKey(mount, ref mount.jsonKey);
             }
-            if (_def != null) NormalizeJsonKey(_def, ref _def.jsonKey);
+            foreach (MissileDefinition d in _defs)
+                if (d != null) NormalizeJsonKey(d, ref d.jsonKey);
 
             var seen = new HashSet<string>();
             foreach (WeaponMount mount in _mounts)

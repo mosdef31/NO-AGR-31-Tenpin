@@ -44,7 +44,7 @@ namespace RocketPod
                 if (station == null) return true;
 
                 if (station.WeaponInfo == null ||
-                    station.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return true;
+                    !PluginInfo.IsOurWeaponName(station.WeaponInfo.weaponName)) return true;
 
                 if (_fTargetList.GetValue(__instance) is not List<Unit> targets) return true;
                 if (targets.Count <= 1) return true;

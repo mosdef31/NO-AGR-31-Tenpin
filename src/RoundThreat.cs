@@ -95,7 +95,7 @@ namespace RocketPod
             try
             {
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 RoundThreat.Register(__instance);
             }
@@ -115,7 +115,7 @@ namespace RocketPod
             try
             {
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 RoundThreat.Release(__instance);
             }

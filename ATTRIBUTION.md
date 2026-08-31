@@ -20,6 +20,21 @@ from the source unmodified and renamed.
 CC BY permits both the modification and the redistribution. It requires the credit above,
 a link to the licence, and a statement that changes were made. All three are here.
 
+## The AGR-51 Strike's pod and rocket
+
+The AGR-51's pod body, its rocket and the textures on both are derived from the four round
+130 mm rocket pod and its rocket in:
+
+> "A-5C custom payload (War Thunder)"
+> (https://sketchfab.com/3d-models/a-5c-custom-payload-war-thunder-a76857b7b333456baef44264a7436ba7),
+> a remake by its author.
+
+**What was changed:** the pod was isolated from the set and recentred on its own tube
+axis; its face winding was reversed, having arrived inside out; the rocket was rebuilt as
+a body with four separate fin blades so the fins can fold and deploy; the four texture
+maps were converted and the specular map repacked into the smoothness channel the game's
+shader reads.
+
 ## Everything else
 
 The pods, their skins and all of the code are mine.

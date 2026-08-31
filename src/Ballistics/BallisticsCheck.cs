@@ -9,6 +9,8 @@ using HarmonyLib;
 using NuclearOption.Networking;
 using UnityEngine;
 
+using Shared.Ballistics;
+
 namespace RocketPod.Ballistics
 {
 

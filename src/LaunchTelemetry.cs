@@ -141,6 +141,26 @@ namespace RocketPod
                     $"spawns={serverSide} ammo={station?.Ammo ?? -1}");
         }
 
+        private static bool _launchVelocityLogged;
+
+        internal static void LaunchVelocity(Unit owner, Vector3 inherited, Vector3 total)
+        {
+            if (_launchVelocityLogged) return;
+            _launchVelocityLogged = true;
+
+            float ownerSpeed = owner != null && owner.rb != null ? owner.rb.velocity.magnitude : -1f;
+
+            Plugin.Log.LogInfo(
+                $"[Tenpin/shot] First round of the session left at {total.magnitude:0.#} m/s: " +
+                $"inherited {inherited.magnitude:0.#} m/s from the aircraft plus the tube's " +
+                $"ejection vector. Aircraft rb.velocity reads {ownerSpeed:0.#} m/s " +
+                $"(owner '{(owner != null ? owner.unitName : "null")}', " +
+                $"IsServer={(owner != null && owner.IsServer)}, " +
+                $"HasAuthority={(owner != null && owner.HasAuthority)}). If the inherited figure " +
+                "is near zero while the aircraft was moving, that is the multiplayer " +
+                "no-launch-velocity report.");
+        }
+
         internal static void SpawnResult(TenpinLauncher pod, Missile? spawned)
         {
             PodLedger row = LedgerFor(pod);

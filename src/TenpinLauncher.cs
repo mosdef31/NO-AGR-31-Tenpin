@@ -241,6 +241,7 @@ namespace RocketPod
                             pod.missile, tube.position, tube.rotation, velocity, target, owner);
 
                         LaunchTelemetry.SpawnResult(pod, spawned);
+                        LaunchTelemetry.LaunchVelocity(owner, inheritedVelocity, velocity);
 
                         if (spawned != null) StartCoroutine(ConfirmStillAlive(spawned));
 

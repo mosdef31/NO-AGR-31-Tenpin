@@ -34,7 +34,7 @@ namespace RocketPod
                 }
 
                 if (__instance.WeaponInfo == null ||
-                    __instance.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return;
+                    !PluginInfo.IsOurWeaponName(__instance.WeaponInfo.weaponName)) return;
 
                 List<Weapon> weapons = __instance.Weapons;
                 if (weapons == null || weapons.Count == 0) return;

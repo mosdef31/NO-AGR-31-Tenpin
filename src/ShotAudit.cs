@@ -119,7 +119,7 @@ namespace RocketPod
             {
                 if (!Plugin.AiShotAudit.Value) return;
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 ShotAudit.Track(__instance);
             }
@@ -140,7 +140,7 @@ namespace RocketPod
             {
                 if (!Plugin.AiShotAudit.Value) return;
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 ShotAudit.Landed(__instance, __instance.GlobalPosition().AsVector3());
             }

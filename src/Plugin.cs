@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using RocketPod.Ballistics;
+using Shared.Ballistics;
 using UnityEngine;
 
 namespace RocketPod
@@ -49,6 +51,11 @@ namespace RocketPod
         public static ConfigEntry<float> TiltAssistAuthority { get; private set; } = null!;
 
         public static ConfigEntry<bool> SillyEffectsEnabled { get; private set; } = null!;
+
+        public static ConfigEntry<float> StrikeFinHold { get; private set; } = null!;
+        public static ConfigEntry<float> StrikeFinSweep { get; private set; } = null!;
+
+        public static ConfigEntry<bool> WaterBackstop { get; private set; } = null!;
 
         public static ConfigEntry<bool> DumpTuningReadout { get; private set; } = null!;
         public static ConfigEntry<bool> DumpPrefabRenderers { get; private set; } = null!;
@@ -314,6 +321,8 @@ namespace RocketPod
 
                 Patch(typeof(WeaponMount_Initialize_NullPrefabGuard));
 
+                Patch(typeof(WeaponMount_Initialize_HideWeaponPrefabPatch));
+
                 Patch(typeof(Hardpoint_SpawnMount_OffsetPatch));
 
                 Patch(typeof(MissileLauncher_OnEnable_SwapPatch));
@@ -374,6 +383,12 @@ namespace RocketPod
 
                 Patch(typeof(TenpinLauncher.WeaponStation_AccountAmmo_PrunePatch));
 
+                Patch(typeof(Missile_OnStartClient_WaterPatch));
+
+                Patch(typeof(Missile_OnStartClient_StrikeFinPatch));
+
+                AuditPatchClasses();
+
                 gameObject.AddComponent<AssetCheckRunner>();
                 gameObject.AddComponent<Hud.TenpinHud>();
 
@@ -420,6 +435,7 @@ namespace RocketPod
         {
             try
             {
+                _patchRegistered.Add(patchClass);
                 _harmony!.PatchAll(patchClass);
             }
             catch (Exception ex)
@@ -433,6 +449,41 @@ namespace RocketPod
         }
 
         private int _patchFailures;
+
+        private readonly HashSet<Type> _patchRegistered = new HashSet<Type>();
+
+        private void AuditPatchClasses()
+        {
+            try
+            {
+                var orphans = new List<string>();
+
+                foreach (Type t in typeof(Plugin).Assembly.GetTypes())
+                {
+                    if (_patchRegistered.Contains(t)) continue;
+                    if (t.GetCustomAttributes(typeof(HarmonyPatch), inherit: false).Length == 0) continue;
+                    orphans.Add(t.Name);
+                }
+
+                if (orphans.Count == 0)
+                {
+                    Log.LogInfo("[RocketPod] Patch audit: every [HarmonyPatch] class in this assembly is " +
+                         "registered.");
+                    return;
+                }
+
+                orphans.Sort();
+                Log.LogInfo($"[RocketPod] Patch audit: {orphans.Count} [HarmonyPatch] class(es) were NOT " +
+                     $"registered this session - {string.Join(", ", orphans.ToArray())}. Some are " +
+                     "config-gated and belong here; one that is not is a patch doing nothing at " +
+                     "all, which is what happened to the map icons, the ride heights and the " +
+                     "mount-name repair.");
+            }
+            catch (Exception ex)
+            {
+                Log.LogWarning($"[RocketPod] Patch audit could not run: {ex.Message}");
+            }
+        }
 
         private void BindConfig()
         {
@@ -602,6 +653,29 @@ namespace RocketPod
                     null,
                     new ConfigurationManagerAttributes { Order = 100 }));
 
+            StrikeFinHold = Config.Bind(
+                "Advanced", "StrikeFinHold", 0.25f,
+                new ConfigDescription(
+                    "Seconds the AGR-51's fins stay folded after it leaves the pod.",
+                    new AcceptableValueRange<float>(0f, 2f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 97 }));
+
+            StrikeFinSweep = Config.Bind(
+                "Advanced", "StrikeFinSweep", 0.18f,
+                new ConfigDescription(
+                    "Seconds the AGR-51's fins take to swing out once they start.",
+                    new AcceptableValueRange<float>(0.02f, 2f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 96 }));
+
+            WaterBackstop = Config.Bind(
+                "Advanced", "WaterBackstop", true,
+                new ConfigDescription(
+                    "Ends a rocket that goes into the sea and is not detonated by the " +
+                    "game. Leave this on: without it such a rocket is never removed at " +
+                    "all, and enough of them will stutter the frame rate.",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true, Order = 98 }));
+
             DumpTuningReadout = Config.Bind(
                 "Advanced", "TuningReadout", false,
                 new ConfigDescription(
@@ -717,6 +791,12 @@ namespace RocketPod
             try
             {
                 EncyclopediaRegistration.EnsureRegisteredAndRebuild();
+
+                if (EncyclopediaRegistration.ResolvedMounts.Count == 0)
+                {
+
+                    return;
+                }
 
                 ExtraHardpoints.Apply();
 

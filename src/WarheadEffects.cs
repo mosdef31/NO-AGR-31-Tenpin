@@ -41,21 +41,36 @@ namespace RocketPod
 
         private static void Apply()
         {
-            MissileDefinition? def = EncyclopediaRegistration.ResolvedMissile;
-            GameObject? ourPrefab = def != null ? def.unitPrefab : null;
+            int done = 0;
+            foreach (MissileDefinition d in EncyclopediaRegistration.ResolvedMissiles)
+            {
+                if (d == null) continue;
+                if (ApplyTo(d)) done++;
+            }
+
+            if (done == 0)
+                Plugin.Log.LogWarning(
+                    "[Tenpin] Warhead effects: no rocket was filled. Every round in this " +
+                    "mod will fizzle rather than explode, and one that detonates below " +
+                    "sea level will throw inside the engine.");
+        }
+
+        private static bool ApplyTo(MissileDefinition def)
+        {
+            GameObject? ourPrefab = def.unitPrefab;
             if (ourPrefab == null)
             {
                 Plugin.Log.LogWarning(
                     "[Tenpin] Warhead effects: our rocket prefab is not resolved yet, so nothing " +
                     "to fill. This is expected if the bundle failed to load.");
-                return;
+                return false;
             }
 
             var ourMissile = ourPrefab.GetComponent<Missile>();
             if (ourMissile == null)
             {
                 Plugin.Log.LogWarning("[Tenpin] Warhead effects: the rocket prefab has no Missile.");
-                return;
+                return false;
             }
 
             FieldInfo? fWarhead = typeof(Missile).GetField("warhead", Inst);
@@ -64,14 +79,14 @@ namespace RocketPod
                 Plugin.Log.LogError(
                     "[Tenpin] Warhead effects: Missile has no 'warhead' field in this build. " +
                     "Re-check the decompile.");
-                return;
+                return false;
             }
 
             object? ourWarhead = fWarhead.GetValue(ourMissile);
             if (ourWarhead == null)
             {
                 Plugin.Log.LogWarning("[Tenpin] Warhead effects: our warhead is null.");
-                return;
+                return false;
             }
 
             Type warheadType = ourWarhead.GetType();
@@ -84,7 +99,7 @@ namespace RocketPod
             if (fields.Length == 0)
             {
                 Plugin.Log.LogError("[Tenpin] Warhead effects: none of the effect fields resolved.");
-                return;
+                return false;
             }
 
             string[] missing = fields
@@ -95,8 +110,9 @@ namespace RocketPod
             if (missing.Length == 0)
             {
                 Plugin.Log.LogInfo(
-                    "[Tenpin] Warhead effects: all set in the bundle, nothing borrowed.");
-                return;
+                    $"[Tenpin] Warhead effects on '{def.jsonKey}': all set in the bundle, " +
+                    "nothing borrowed.");
+                return false;
             }
 
             object? donorWarhead = FindDonor(fWarhead, fields, out string donorName);
@@ -108,7 +124,7 @@ namespace RocketPod
                     "terrainEffect, armorEffect and underwaterEffect are NOT null-checked by " +
                     "Missile+Warhead.Detonate, so the rocket will throw on impact and do nothing. " +
                     "Assign them in Unity.");
-                return;
+                return false;
             }
 
             int filled = 0;
@@ -124,9 +140,10 @@ namespace RocketPod
             fWarhead.SetValue(ourMissile, ourWarhead);
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Warhead effects: filled {filled} of {missing.Length} unset " +
-                $"({string.Join(", ", missing)}) from '{donorName}'. Assign real ones in Unity " +
-                "when convenient - borrowed effects are tuned for the donor's yield, not ours.");
+                $"[Tenpin] Warhead effects on '{def.jsonKey}': filled {filled} of " +
+                $"{missing.Length} unset ({string.Join(", ", missing)}) from '{donorName}'. " +
+                "Assign real ones in Unity when convenient - borrowed effects are tuned " +
+                "for the donor's yield, not ours.");
 
             string[] stillNull = fields
                 .Take(3)
@@ -136,10 +153,13 @@ namespace RocketPod
             if (stillNull.Length > 0)
             {
                 Plugin.Log.LogError(
-                    $"[Tenpin] STILL UNSET after borrowing: {string.Join(", ", stillNull)}. These " +
-                    "are not null-checked by the game, so the rocket will throw on impact and do " +
-                    "no damage. Assign them in Unity.");
+                    $"[Tenpin] '{def.jsonKey}' STILL UNSET after borrowing: " +
+                    $"{string.Join(", ", stillNull)}. These are not null-checked by the game, " +
+                    "so the rocket will throw on impact and do no damage. Assign them in Unity.");
+                return false;
             }
+
+            return true;
         }
 
         private static object? FindDonor(FieldInfo fWarhead, FieldInfo[] fields, out string donorName)

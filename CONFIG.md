@@ -2,7 +2,7 @@
 
 `BepInEx/config/com.tenpin.cfg`, written on first run.
 
-**31 keys: 11 for the HUD, 5 for the assists, 2 for effects, 1 for AI loadouts and 12
+**34 keys: 11 for the HUD, 5 for the assists, 2 for effects, 1 for AI loadouts and 15
 diagnostics.** During development this file had 57, covering dispersion, blast,
 signature, price, guidance and the aimpoint corrections. Those are settled and compiled
 into the build; the reasoning for each value sits next to the value in `Plugin.cs`.
@@ -49,8 +49,8 @@ answers where the rounds go if you stop drifting, which is a question you can fl
 mark standing on a ridge and a mark three kilometres behind it appear in the same place
 at the same size.
 
-**Why `CockpitOnly` defaults on.** The stock HUD lives on the cockpit glass and is simply
-not in shot from outside. Ours is an overlay canvas, so without this it floats over an
+**Why `CockpitOnly` defaults on.** The stock HUD lives on the cockpit glass and is not in
+shot from outside. Ours is an overlay canvas, so without this it floats over an
 orbit or chase view.
 
 
@@ -64,8 +64,7 @@ orbit or chase view.
 | `TiltAssistKey` | KeyCode.Y |  | Arms and disarms the tilt assist in flight. It starts every sortie disarmed. The HUD shows TILT ARMED when armed and TILT while it is flying the shot. |
 | `Tilt assist authority` | 0.30 |  | Fraction of the pitch axis the tilt assist may use. Your own stick is added on top and is never limited. |
 
-**They were designed as one package**, agreed with the owner on 2026-08-12, and chosen
-instead of widening dispersion, which would have made the shot easier by making each
+**They were designed as one package**, and chosen instead of widening dispersion, which would have made the shot easier by making each
 rocket weaker.
 
 **The release assist can only ever delay a shot you aimed at something.** It suppresses
@@ -81,7 +80,7 @@ long shot still settles too slowly for you.
 
 | Key | Default | | Effect |
 |---|---|---|---|
-| `Motor effect donor` | AAM1 |  | Which stock missile's motor effect the rockets borrow, by jsonKey. A comma separated list is allowed and the first that has fire wins; empty picks by closest burn time. Read per round. Suggested: AAM1, AGM2, AAM3. |
+| `Motor effect donor` | AAM1 |  | Which stock missile's motor effect the rockets borrow, by its internal name. A comma separated list is allowed and the first that has fire wins; empty picks by closest burn time. Read per round. Suggested: AAM1, AGM2, AAM3. |
 | `Silly effects` | false |  | Flies the AGR-31's own cyan effects instead of a borrowed stock plume. |
 
 **The default is a borrowed plume.** The rockets take a stock missile's motor effect
@@ -112,6 +111,9 @@ now does nothing. Delete it or regenerate the file.
 
 | Key | Default | | Effect |
 |---|---|---|---|
+| `StrikeFinHold` | 0.25 |  | Seconds the AGR-51's fins stay folded after the round leaves the pod. |
+| `StrikeFinSweep` | 0.18 |  | Seconds the AGR-51's fins take to swing out once they start. |
+| `WaterBackstop` | true |  | Ends a rocket that goes into the sea and is not set off by the game. Leave this on: without it such a rocket is never removed at all, and enough of them will stutter the frame rate. |
 | `AiForceLoadout` | false |  | Arms every AI flight on a cleared airframe with the 'Saturation and Self Defence' loadout, ignoring LoadoutChance. |
 | `TuningReadout` | false |  | Prints the round's maximum range and the stock damage table at the missions menu. |
 | `DumpPrefabRenderers` | false |  | Dumps the mounted prefab's transforms, meshes, materials, shaders, layers and scales at the missions menu, next to a stock pod's. |

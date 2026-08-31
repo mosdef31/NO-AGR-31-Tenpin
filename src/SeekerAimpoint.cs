@@ -3,6 +3,7 @@ using System.Reflection;
 using HarmonyLib;
 using RocketPod.Ballistics;
 using UnityEngine;
+using Shared.Ballistics;
 
 namespace RocketPod
 {
@@ -160,7 +161,7 @@ namespace RocketPod
             float stepScale = Mathf.Max(1f, Plugin.AimpointStepScale.Value);
 
             return TerrainImpact.Solve(spec, launchPos, missile.rb.velocity, stepScale,
-                                       TrySampleGroundHeight);
+                                       TrySampleGroundHeight, Plugin.SampleTerrainHeight.Value);
         }
 
         private static void StampFlightTime(Missile missile, Vector3 launchPos, GlobalPosition target)
@@ -300,7 +301,7 @@ namespace RocketPod
             if (result.Hit && Plugin.SampleTerrainHeight.Value)
             {
                 TrajectorySolver.Result marched = TerrainImpact.Solve(
-                    spec, launchPos, missile.rb.velocity, stepScale, TrySampleGroundHeight);
+                    spec, launchPos, missile.rb.velocity, stepScale, TrySampleGroundHeight, Plugin.SampleTerrainHeight.Value);
 
                 if (marched.Hit)
                 {
@@ -377,7 +378,7 @@ namespace RocketPod
                 if (SeekerFields.Missile!.GetValue(__instance) is not Missile missile) return;
 
                 if (missile.definition == null ||
-                    missile.definition.unitName != PluginInfo.MissileUnitName) return;
+                    !PluginInfo.IsOurUnitName(missile.definition.unitName)) return;
 
                 float slantRange = AimpointChannel.Apply(__instance, missile);
                 AngularDispersion.Apply(__instance, slantRange);

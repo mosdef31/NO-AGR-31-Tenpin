@@ -146,7 +146,7 @@ namespace RocketPod
             foreach (MissileDefinition md in enc.missiles)
             {
                 if (md == null || md.unitPrefab == null) continue;
-                if (md.jsonKey == PluginInfo.MissileKey) continue;
+                if (PluginInfo.IsOurRound(md.jsonKey)) continue;
 
                 Missile? m = md.unitPrefab.GetComponent<Missile>();
                 if (m == null) continue;
@@ -202,38 +202,22 @@ namespace RocketPod
 
             if (_fFlightSound.GetValue(round) as AudioSource != null) return;
 
-            if (!SalvoBudget.TryTakeVoice(round)) return;
-
             AudioClip? clip = LaunchAudio.SharedClip();
             if (clip == null) return;
-
-            var go = new GameObject("Tenpin_FlightSound");
-            go.transform.SetParent(round.transform, false);
-
-            AudioSource src = LaunchAudio.Configure(go.AddComponent<AudioSource>());
-            src.clip = clip;
-            src.loop = true;
-            src.dopplerLevel = 1f;
-            src.minDistance = 40f;
-            src.maxDistance = 4000f;
-
-            _fFlightSound.SetValue(round, src);
 
             if (_fNearbyDetonation != null &&
                 _fNearbyDetonation.GetValue(round) as AudioClip == null)
                 _fNearbyDetonation.SetValue(round, clip);
 
-            round.RegisterDopplerSound(src);
-            src.volume = 0f;
-            src.Play();
-
             if (!_logged)
             {
                 _logged = true;
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Flight sound: '{clip.name}' on Missile.flightSound, doppler " +
-                    "registered, volume and pitch driven by the game from speed. Author one in " +
-                    "the bundle and this stops running. Logged once.");
+                    $"[Tenpin] Impact crack: '{clip.name}' on Missile.nearbyDetonationClip. " +
+                    "There is deliberately NO looping flight sound - the borrowed clip is a " +
+                    "launch report and looping it is the clanking removed on 2026-08-31. " +
+                    "Author a real one in the bundle if the coast should be audible. " +
+                    "Logged once.");
             }
         }
     }
@@ -247,7 +231,7 @@ namespace RocketPod
             try
             {
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 FlightAudio.Apply(__instance);
             }

@@ -27,24 +27,29 @@ namespace RocketPod
 
         private static void Apply()
         {
-            WeaponInfo? canonical = LauncherInfo(PluginInfo.MountKey);
-            if (canonical == null)
-            {
-                Plugin.Log.LogWarning(
-                    "[Tenpin] The 7-tube's launcher has no WeaponInfo, so there is nothing to put " +
-                    "the heavy pod's station on. Both pods still work, as two stations.");
-                return;
-            }
 
+            var canonicals = new System.Collections.Generic.Dictionary<string, WeaponInfo>();
             int moved = 0;
+
             foreach (WeaponMount mount in EncyclopediaRegistration.ResolvedMounts)
             {
-                if (mount == null || mount.jsonKey == PluginInfo.MountKey) continue;
-                if (mount.prefab == null) continue;
+                if (mount == null || mount.prefab == null) continue;
+
+                PluginInfo.MountSpec? spec = PluginInfo.SpecFor(mount.jsonKey);
+                if (spec == null) continue;
+                string round = spec.Value.RoundKey;
 
                 foreach (Weapon w in mount.prefab.GetComponentsInChildren<Weapon>(true))
                 {
-                    if (w == null || ReferenceEquals(w.info, canonical)) continue;
+                    if (w == null || w.info == null) continue;
+
+                    if (!canonicals.TryGetValue(round, out WeaponInfo canonical))
+                    {
+                        canonicals[round] = w.info;
+                        continue;
+                    }
+
+                    if (ReferenceEquals(w.info, canonical)) continue;
                     w.info = canonical;
                     moved++;
                 }
@@ -53,23 +58,13 @@ namespace RocketPod
             if (moved == 0) return;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Both pods now share one weapon station: repointed {moved} launcher(s) at " +
-                $"'{canonical.weaponName}'s WeaponInfo. WeaponManager keys a station off reference " +
-                "equality of this asset, so two identical copies were two stations. The mounts keep " +
-                "their own WeaponInfo, so the loadout still lists and prices them separately.");
+                $"[Tenpin] Repointed {moved} launcher(s) so pods firing the same rocket share one " +
+                $"station, across {canonicals.Count} rocket(s). WeaponManager keys a station off " +
+                "reference equality of this asset, so two identical copies were two stations. Pods " +
+                "firing DIFFERENT rockets keep their own, or the second weapon flies under the " +
+                "first's name, icon and trajectory. The mounts keep their own WeaponInfo, so the " +
+                "loadout still lists and prices every pod separately.");
         }
 
-        private static WeaponInfo? LauncherInfo(string jsonKey)
-        {
-            foreach (WeaponMount mount in EncyclopediaRegistration.ResolvedMounts)
-            {
-                if (mount == null || mount.jsonKey != jsonKey || mount.prefab == null) continue;
-
-                foreach (Weapon w in mount.prefab.GetComponentsInChildren<Weapon>(true))
-                    if (w != null && w.info != null) return w.info;
-            }
-
-            return null;
-        }
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace RocketPod.Ballistics
+namespace Shared.Ballistics
 {
 
     internal static class TerrainMasking

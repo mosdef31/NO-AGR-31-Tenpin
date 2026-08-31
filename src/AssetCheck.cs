@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
+using Shared.Ballistics;
 
 namespace RocketPod
 {
@@ -328,9 +329,29 @@ namespace RocketPod
             {
                 ok.Add($"WeaponInfo present, weaponName '{mount.info.weaponName}', " +
                        $"massPerRound {mount.info.massPerRound} kg.");
-                if (mount.info.weaponName != PluginInfo.WeaponInfoName)
+                if (!PluginInfo.IsOurWeaponName(mount.info.weaponName))
                     fail.Add($"WeaponInfo.weaponName is '{mount.info.weaponName}' but the DLL expects " +
                              $"'{PluginInfo.WeaponInfoName}'. The loadout list reads this field.");
+
+                PluginInfo.WeaponSpec? wspec = PluginInfo.WeaponForName(mount.info.weaponName);
+                string wantShort = wspec?.ShortName ?? PluginInfo.ShortName;
+                if (mount.info.shortName != wantShort)
+                    fail.Add($"WeaponInfo.shortName is '{mount.info.shortName}' but this weapon's " +
+                             $"is '{wantShort}'. WeaponIndicator draws this string next to the " +
+                             "weapon icon in flight, so the pod flies under the wrong name while " +
+                             "every other field reads correctly.");
+                else
+                    ok.Add($"WeaponInfo.shortName is '{mount.info.shortName}', which is what the " +
+                           "in-flight indicator draws.");
+
+                if (mount.info.weaponIcon == null)
+                    fail.Add("WeaponInfo.weaponIcon is null, so the in-flight indicator draws no " +
+                             "icon for this pod.");
+                else
+                    ok.Add($"WeaponInfo.weaponIcon is '{mount.info.weaponIcon.name}'. Compare it " +
+                           "against the other pods' in this same log - a shared icon here is the " +
+                           "AGR-51 flying under the AGR-31's identity, which nothing else catches.");
+
                 if (mount.info.gun)
                     fail.Add("WeaponInfo.gun is true. Both stock AGRs are gun=false missile-type " +
                              "stores; on the gun path the rocket model is never seen in flight.");
@@ -455,7 +476,7 @@ namespace RocketPod
             else
             {
                 ok.Add($"MissileLauncher.missile is '{def.unitName}' (jsonKey '{def.jsonKey}').");
-                if (def.jsonKey != PluginInfo.MissileKey)
+                if (!PluginInfo.IsOurRound(def.jsonKey))
                     fail.Add($"MissileDefinition.jsonKey is '{def.jsonKey}' but the DLL expects " +
                              $"'{PluginInfo.MissileKey}'.");
 
@@ -466,6 +487,25 @@ namespace RocketPod
                 }
                 else
                 {
+
+                    GameObject? byInfo = launcher.info != null
+                        ? launcher.info.weaponPrefab : null;
+                    if (byInfo != null && !ReferenceEquals(byInfo, flying))
+
+                        fail.Add($"MissileDefinition.unitPrefab is '{flying.name}' but this " +
+                                 $"weapon's WeaponInfo names '{byInfo.name}' as its round. The " +
+                                 "engine spawns what the DEFINITION names, so this pod fires " +
+                                 "another weapon's rocket - which looks like a modelling mistake " +
+                                 "in the air and logs nothing. Every check below this line has " +
+                                 $"just been run against '{flying.name}', not against ours. " +
+                                 $"MissileLauncher.info is '{launcher.info?.name ?? "null"}' " +
+                                 $"(weaponName '{launcher.info?.weaponName ?? "null"}'), " +
+                                 $"WeaponMount.info is '{mount.info?.name ?? "null"}' " +
+                                 $"(weaponName '{mount.info?.weaponName ?? "null"}'), and they are " +
+                                 $"{(ReferenceEquals(launcher.info, mount.info) ? "the SAME object" : "DIFFERENT objects")}.");
+                    else if (byInfo != null)
+                        ok.Add($"the definition and the WeaponInfo agree the round is '{flying.name}'.");
+
                     var missile = flying.GetComponent<Missile>();
                     if (missile == null)
                         fail.Add("the rocket prefab has no Missile component.");

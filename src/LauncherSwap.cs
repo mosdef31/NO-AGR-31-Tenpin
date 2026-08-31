@@ -146,7 +146,7 @@ namespace RocketPod
             try
             {
                 if (__instance.info == null) return;
-                if (__instance.info.weaponName != PluginInfo.WeaponInfoName) return;
+                if (!PluginInfo.IsOurWeaponName(__instance.info.weaponName)) return;
 
                 LauncherSwap.Bind(__instance);
             }

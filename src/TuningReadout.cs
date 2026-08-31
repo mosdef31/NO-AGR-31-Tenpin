@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using RocketPod.Ballistics;
 using UnityEngine;
+using Shared.Ballistics;
 
 namespace RocketPod
 {
@@ -181,7 +182,7 @@ namespace RocketPod
                 float mass = Float(m, "mass");
 
                 var row = (md.jsonKey ?? md.name, mass, blast, pierce);
-                if (md.jsonKey == PluginInfo.MissileKey) ours = row;
+                if (PluginInfo.IsOurRound(md.jsonKey)) ours = row;
                 else if (blast > 0f || pierce > 0f) rows.Add(row);
             }
 

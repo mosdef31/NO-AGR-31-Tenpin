@@ -400,7 +400,7 @@ namespace RocketPod
             foreach (MissileDefinition md in enc.missiles)
             {
                 if (md == null || md.unitPrefab == null) continue;
-                if (md.jsonKey == PluginInfo.MissileKey) continue;
+                if (PluginInfo.IsOurRound(md.jsonKey)) continue;
 
                 Missile? m = md.unitPrefab.GetComponent<Missile>();
                 if (m == null) continue;
@@ -443,7 +443,7 @@ namespace RocketPod
             try
             {
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 SillyEffects.ApplyMotor(__instance);
                 MotorEffects.Apply(__instance);

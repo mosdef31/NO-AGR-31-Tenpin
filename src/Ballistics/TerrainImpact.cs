@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace RocketPod.Ballistics
+namespace Shared.Ballistics
 {
 
     internal static class TerrainImpact
@@ -15,12 +15,13 @@ namespace RocketPod.Ballistics
 
         private static readonly List<Vector3> _path = new List<Vector3>(MaxPathSamples);
 
-        internal static TrajectorySolver.Result Solve(
+        public static TrajectorySolver.Result Solve(
             TrajectorySolver.RoundSpec spec,
             Vector3 launch,
             Vector3 velocity,
             float stepScale,
-            SampleGround sampleGround)
+            SampleGround sampleGround,
+            bool sampleTerrain)
         {
             _path.Clear();
 
@@ -29,7 +30,7 @@ namespace RocketPod.Ballistics
                 sample: (t, pos, vel) => { if (_path.Count < MaxPathSamples) _path.Add(pos); },
                 sampleInterval: PathSampleSeconds);
 
-            if (!r.Hit || !Plugin.SampleTerrainHeight.Value || _path.Count < 2) return r;
+            if (!r.Hit || !sampleTerrain || _path.Count < 2) return r;
 
             int hitIndex = -1;
             for (int i = 1; i < _path.Count; i++)

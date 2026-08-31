@@ -18,7 +18,7 @@ namespace RocketPod
                 if (!Plugin.RoundRadarSignature.Value) return;
 
                 if (__instance.definition == null ||
-                    __instance.definition.unitName != PluginInfo.MissileUnitName) return;
+                    !PluginInfo.IsOurUnitName(__instance.definition.unitName)) return;
 
                 float want = Mathf.Max(0f, Plugin.RoundRCS.Value);
                 float have = __instance.RCS;
@@ -67,7 +67,7 @@ namespace RocketPod
                 if (!Plugin.RoundIRSignature.Value) return;
 
                 if (__instance.definition == null ||
-                    __instance.definition.unitName != PluginInfo.MissileUnitName) return;
+                    !PluginInfo.IsOurUnitName(__instance.definition.unitName)) return;
 
                 if (_fMotors == null || _fIntensity == null)
                 {

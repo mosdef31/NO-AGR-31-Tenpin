@@ -137,7 +137,7 @@ namespace RocketPod
             try
             {
                 if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                    !PluginInfo.IsOurRound(__instance.definition.jsonKey)) return;
 
                 SalvoBudget.Register(__instance);
             }

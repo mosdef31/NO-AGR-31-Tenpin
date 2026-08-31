@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace RocketPod.Ballistics
+namespace Shared.Ballistics
 {
 
     public static class TrajectorySolver

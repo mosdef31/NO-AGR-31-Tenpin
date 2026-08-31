@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using RocketPod.Ballistics;
+using Shared.Ballistics;
 using UnityEngine;
 
 namespace RocketPod
@@ -532,7 +533,7 @@ namespace RocketPod
 
             TrajectorySolver.Result r = TerrainImpact.Solve(
                 spec, launch, velocity, Plugin.AiSolverStepScale.Value,
-                AimpointChannel.TrySampleGroundHeight);
+                AimpointChannel.TrySampleGroundHeight, Plugin.SampleTerrainHeight.Value);
 
             if (!r.Hit)
             {
@@ -814,7 +815,7 @@ namespace RocketPod
                 // Both pods share one weaponName, deliberately - see PluginInfo.
                 // That is exactly what makes this one test cover all three
                 // mounts without naming any of them.
-                if (station.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return true;
+                if (!PluginInfo.IsOurWeaponName(station.WeaponInfo.weaponName)) return true;
 
                 return !AiEmployment.RunAttack(__instance, pilot, aircraft, station);
             }

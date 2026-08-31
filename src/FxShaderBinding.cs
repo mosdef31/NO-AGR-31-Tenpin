@@ -100,7 +100,7 @@ namespace RocketPod
                 foreach (MissileDefinition md in enc.missiles)
                 {
                     if (md == null || md.unitPrefab == null) continue;
-                    if (md.jsonKey == PluginInfo.MissileKey) continue;
+                    if (PluginInfo.IsOurRound(md.jsonKey)) continue;
 
                     foreach (Renderer r in md.unitPrefab.GetComponentsInChildren<Renderer>(true))
                     {
@@ -212,7 +212,7 @@ namespace RocketPod
             foreach (MissileDefinition md in enc.missiles)
             {
                 if (md == null || md.unitPrefab == null) continue;
-                if (md.jsonKey == PluginInfo.MissileKey) continue;
+                if (PluginInfo.IsOurRound(md.jsonKey)) continue;
 
                 foreach (ParticleSystemRenderer r in
                          md.unitPrefab.GetComponentsInChildren<ParticleSystemRenderer>(true))

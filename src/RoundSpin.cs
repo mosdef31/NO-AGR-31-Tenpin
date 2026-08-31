@@ -61,8 +61,11 @@ namespace RocketPod
         {
             try
             {
-                if (__instance.definition == null ||
-                    __instance.definition.jsonKey != PluginInfo.MissileKey) return;
+                if (__instance.definition == null) return;
+
+                PluginInfo.WeaponSpec? spec =
+                    PluginInfo.WeaponForRound(__instance.definition.jsonKey);
+                if (spec == null || !spec.Value.Spins) return;
 
                 if (RoundSpin.IsDisplayRound(__instance)) return;
 

@@ -4,7 +4,7 @@ using System.Reflection;
 using BepInEx.Logging;
 using UnityEngine;
 
-namespace RocketPod.Ballistics
+namespace Shared.Ballistics
 {
 
     public static class RoundSpecFactory

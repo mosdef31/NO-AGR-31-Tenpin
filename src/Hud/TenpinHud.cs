@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using RocketPod.Ballistics;
+using Shared.Ballistics;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -116,8 +117,8 @@ namespace RocketPod.Hud
 
         private bool _presentable = true;
 
-        private TrajectorySolver.RoundSpec? _spec;
-        private Missile? _specSource;
+        private readonly System.Collections.Generic.Dictionary<Missile, TrajectorySolver.RoundSpec>
+            _specs = new System.Collections.Generic.Dictionary<Missile, TrajectorySolver.RoundSpec>();
 
         private Vector3 _groundDesignation;
         private bool _hasGroundDesignation;
@@ -145,8 +146,7 @@ namespace RocketPod.Hud
         {
             ClearDesignation("scene changed");
             _hasImpact = false;
-            _spec = null;
-            _specSource = null;
+            _specs.Clear();
             _maxRange = 0f;
             Hide();
         }
@@ -283,7 +283,8 @@ namespace RocketPod.Hud
         private static TrajectorySolver.Result ImpactOnTerrain(
             TrajectorySolver.RoundSpec spec, Vector3 launch, Vector3 velocity, float step) =>
             TerrainImpact.Solve(spec, launch, velocity, step,
-                                AimpointChannel.TrySampleGroundHeight);
+                                AimpointChannel.TrySampleGroundHeight,
+                                Plugin.SampleTerrainHeight.Value);
 
         private void DrawDirect(Camera cam, Vector2 pip, Vector3 world, float cep,
                                 Color hud, float px, TrajectorySolver.Result r,
@@ -1282,7 +1283,7 @@ namespace RocketPod.Hud
 
             WeaponStation? ws = hud.GetWeaponStation();
             if (ws == null || ws.WeaponInfo == null) return false;
-            if (ws.WeaponInfo.weaponName != PluginInfo.WeaponInfoName) return false;
+            if (!PluginInfo.IsOurWeaponName(ws.WeaponInfo.weaponName)) return false;
             if (ws.Ammo <= 0) return false;
 
             _presentable = true;
@@ -1301,17 +1302,44 @@ namespace RocketPod.Hud
 
         private TrajectorySolver.RoundSpec? ResolveSpec(WeaponStation station)
         {
-            Missile? prefab = EncyclopediaRegistration.ResolvedMissile?.unitPrefab != null
-                ? EncyclopediaRegistration.ResolvedMissile.unitPrefab.GetComponent<Missile>()
-                : null;
-            if (prefab == null) return null;
+            GameObject? go = station?.WeaponInfo?.weaponPrefab;
+            Missile? prefab = go != null ? go.GetComponent<Missile>() : null;
 
-            if (_spec == null || !ReferenceEquals(prefab, _specSource))
+            if (prefab == null)
             {
-                _spec = RoundSpecFactory.FromMissile(prefab, Plugin.Log);
-                _specSource = prefab;
+
+                WarnOnce("nospec",
+                    $"[Tenpin] The selected station's WeaponInfo " +
+                    $"('{station?.WeaponInfo?.weaponName ?? "null"}') names no round prefab, " +
+                    "so there is no flight model to solve and the HUD is drawing nothing. " +
+                    "Check WeaponInfo.weaponPrefab on that weapon.");
+                return null;
             }
-            return _spec;
+
+            if (!_specs.TryGetValue(prefab, out TrajectorySolver.RoundSpec cached))
+            {
+                TrajectorySolver.RoundSpec? made =
+                    RoundSpecFactory.FromMissile(prefab, Plugin.Log);
+                if (made == null) return null;
+                cached = made;
+                _specs[prefab] = cached;
+
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] HUD flight model solved from '{prefab.name}', the round " +
+                    $"'{station?.WeaponInfo?.weaponName}' actually fires. Solved per weapon " +
+                    "rather than per mod since 2026-08-31; a weapon added later needs no " +
+                    "change here.");
+            }
+            return cached;
+        }
+
+        private static readonly System.Collections.Generic.HashSet<string> _warned =
+            new System.Collections.Generic.HashSet<string>();
+
+        private static void WarnOnce(string key, string message)
+        {
+            if (!_warned.Add(key)) return;
+            Plugin.Log.LogWarning(message);
         }
 
         private void EnsureCanvas()
