@@ -76,8 +76,7 @@ namespace RocketPod
                 {
 
                     Plugin.Log.LogError(
-                        "[Tenpin] WATER: Missile.Detonate THREW underwater - this is the fault, " +
-                        $"and it is in the engine's detonation path, not in the fuse: {ex}");
+                        $"[Tenpin] WATER: Missile.Detonate threw underwater: {ex}");
                 }
                 return;
             }
@@ -87,12 +86,10 @@ namespace RocketPod
             _destroyed++;
             if (_destroyed <= 3 || _destroyed % 25 == 0)
             {
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] WATER: round #{_destroyed} survived the sea AND a requested " +
-                    "detonation, so the backstop destroyed it. This is the leak the 2026-08-31 " +
-                    "report described; the WATER line above says what state the round was in. " +
-                    "Every one of these would otherwise have sat in the water for the rest of " +
-                    "the mission burning a Burnout call and a splash roll every fixed step.");
+                    $"[Tenpin] WATER: round #{_destroyed} survived the sea and a requested " +
+                    "detonation, so it was destroyed.");
             }
             Destroy(gameObject);
         }
@@ -115,10 +112,10 @@ namespace RocketPod
             float speed = _rb != null ? _rb.velocity.magnitude : 0f;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] WATER: round entered the sea {(sea - y):F1} m down at {speed:F0} m/s. " +
-                $"impactFuse {impact}, armed {armed}, tangible {_missile!.IsTangible()}, " +
-                $"disabled {_missile.disabled}. The engine detonates ONLY on impactFuse AND armed; " +
-                "anything else here takes the branch that leaves the round in the water for ever.");
+                $"[Tenpin] WATER: round entered the sea {(sea - y):F1} m down at {speed:F0} m/s.");
+            Plugin.Log.LogInfo(
+                $"[Tenpin] WATER: impactFuse {impact}, armed {armed}, " +
+                $"tangible {_missile!.IsTangible()}, disabled {_missile.disabled}.");
         }
     }
 

@@ -80,9 +80,9 @@ namespace RocketPod
                     {
                         _loggedRelease = true;
                         Plugin.Log.LogInfo(
-                            $"[Tenpin] Release assist let a salvo go at {s.Miss:F0} m miss against a " +
-                            $"{s.Tolerance:F0} m tolerance, and will close again past " +
-                            $"{s.Tolerance * StrayFactor:F0} m. Logged once.");
+                            $"[Tenpin] Release assist let a salvo go at {s.Miss:F0} m " +
+                            $"against {s.Tolerance:F0} m, closing again past " +
+                            $"{s.Tolerance * StrayFactor:F0} m.");
                     }
 
                     return true;
@@ -97,9 +97,8 @@ namespace RocketPod
                 {
                     _loggedStop = true;
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Release assist stopped a salvo at {s.Miss:F0} m, past the " +
-                        $"{s.Tolerance * StrayFactor:F0} m stray limit. Bring the pipper back and it " +
-                        "releases again on its own. Logged once.");
+                        $"[Tenpin] Release assist stopped a salvo at {s.Miss:F0} m, past " +
+                        $"the {s.Tolerance * StrayFactor:F0} m stray limit.");
                 }
 
                 return false;

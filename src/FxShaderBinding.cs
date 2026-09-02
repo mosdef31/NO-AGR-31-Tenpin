@@ -25,8 +25,7 @@ namespace RocketPod
             catch (Exception ex)
             {
                 Plugin.Log.LogError(
-                    $"[Tenpin] Binding a shader to the effect materials failed, so the plume may " +
-                    $"render invisible. The rocket still flies: {ex}");
+                    $"[Tenpin] Effect shader binding failed, so the plume may not render: {ex}");
             }
 
             try
@@ -36,8 +35,7 @@ namespace RocketPod
             catch (Exception ex)
             {
                 Plugin.Log.LogError(
-                    $"[Tenpin] Rebinding the pod and rocket materials onto the game's own Lit " +
-                    $"shader failed. They may render magenta on some machines: {ex}");
+                    $"[Tenpin] Lit rebind failed, so the pod may render magenta: {ex}");
             }
         }
 
@@ -48,10 +46,10 @@ namespace RocketPod
             Shader? stock = StockLitShader(out string from);
             if (stock == null)
             {
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] Could not find the game's own Lit shader to rebind the pod and rocket " +
-                    "materials onto, so they keep the copy the bundle shipped. If the pod renders " +
-                    "magenta, that copy is missing a variant for this machine's graphics API.");
+                    "[Tenpin] The game's Lit shader was not found, so materials keep " +
+                    "the bundle's copy.");
                 return;
             }
 
@@ -66,11 +64,8 @@ namespace RocketPod
             if (rebound == 0 && already == 0) return;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Lit bind: {rebound} body material(s) put on the game's own " +
-                $"'{stock.name}' from {from}, {already} already on it. A bundle that ships its own " +
-                "copy of this shader carries only the variants it was built with and renders magenta " +
-                "on a machine using a different graphics API, which is the pink pod. Since the " +
-                "2026-08-12 export the bundle ships no shader here at all and these arrive null.");
+                $"[Tenpin] Lit bind: {rebound} material(s) put on '{stock.name}' " +
+                $"from {from}, {already} already on it.");
         }
 
         private static IEnumerable<Material> OurBodyMaterials()
@@ -134,20 +129,18 @@ namespace RocketPod
             Shader? shader = FindShader(out string from);
             if (shader == null)
             {
+
                 Plugin.Log.LogError(
-                    $"[Tenpin] {orphaned.Count} effect material(s) ship without a shader (that is " +
-                    "deliberate - see FxShaderBinding) and no particle shader could be found in " +
-                    "the running game to bind. The effects will not render. This is cosmetic; the " +
-                    "weapon is unaffected.");
+                    $"[Tenpin] No particle shader found for {orphaned.Count} effect " +
+                    "material(s), so they will not render.");
                 return;
             }
 
             foreach (Material m in orphaned) m.shader = shader;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Bound '{shader.name}' to {orphaned.Count} effect material(s), taken " +
-                $"from {from}. The bundle deliberately ships no shader: packing one made the game " +
-                "spend minutes loading its variants and never reach the menu.");
+                $"[Tenpin] Bound '{shader.name}' to {orphaned.Count} effect " +
+                $"material(s) from {from}.");
         }
 
         private static bool NeedsShader(Material m) =>

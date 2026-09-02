@@ -186,12 +186,12 @@ namespace RocketPod
             {
                 _logged = true;
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] AI loadout '{LoadoutName}' authored: {pods} pod(s) " +
-                    $"({(PrefersHex(aircraft) ? "hex - helicopter or light attack" : "18-tube drum")}), " +
-                    $"{airToAir} air-to-air, {guns} gun. Chance is [AI] LoadoutChance = " +
-                    $"{Plugin.AiLoadoutChance.Value:0.00}" +
-                    (Plugin.AiForceLoadout.Value ? ", FORCED by [Advanced] AiForceLoadout" : "") +
-                    ". Logged once.");
+                    $"[Tenpin] AI loadout '{LoadoutName}': {pods} pod(s) " +
+                    $"({(PrefersHex(aircraft) ? "hex" : "18-tube drum")}), " +
+                    $"{airToAir} air-to-air, {guns} gun.");
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] [AI] LoadoutChance = {Plugin.AiLoadoutChance.Value:0.00}" +
+                    (Plugin.AiForceLoadout.Value ? ", FORCED by AiForceLoadout" : "") + ".");
             }
 
             return loadout;

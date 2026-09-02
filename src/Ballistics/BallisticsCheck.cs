@@ -63,8 +63,8 @@ namespace RocketPod.Ballistics
         internal static void Install(Harmony harmony)
         {
             harmony.PatchAll(typeof(BallisticsCheck));
-            Log.LogInfo("[RocketPod] Ballistics check armed: every missile launch will be " +
-                        "predicted at spawn and scored at impact.");
+            Log.LogInfo("[RocketPod] Ballistics check armed: launches are predicted " +
+                        "and scored at impact.");
         }
 
         [HarmonyPatch(typeof(Spawner), nameof(Spawner.SpawnMissile),
@@ -232,15 +232,16 @@ namespace RocketPod.Ballistics
         {
             if (!NetworkManagerNuclearOption.i.Server.Active)
             {
-                Log.LogWarning("[RocketPod] Control round: not the server. Missile physics runs " +
-                               "under LocalSim, which is server-only. Host the mission.");
+
+                Log.LogWarning("[RocketPod] Control round: not the server. " +
+                               "Host the mission.");
                 return false;
             }
 
             if (!GameManager.GetLocalAircraft(out Aircraft aircraft) || aircraft == null)
             {
-                Log.LogWarning("[RocketPod] Control round: no local aircraft. Spawner.SpawnMissile " +
-                               "dereferences owner.transform without a null check.");
+
+                Log.LogWarning("[RocketPod] Control round: no local aircraft.");
                 return false;
             }
 
@@ -301,9 +302,9 @@ namespace RocketPod.Ballistics
             {
                 t.IsControl = true;
                 Log.LogInfo($"[RocketPod] Control round away: \"{t.RoundName}\" at " +
-                            $"{elevation:F0} deg elevation, {launchVel.magnitude:F0} m/s. " +
-                            $"Predicted range {t.PredictedRange:F0} m, ToF " +
-                            $"{t.PredictedTimeOfFlight:F1} s.");
+                            $"{elevation:F0} deg, {launchVel.magnitude:F0} m/s.");
+                Log.LogInfo($"[RocketPod] Predicted range {t.PredictedRange:F0} m, " +
+                            $"ToF {t.PredictedTimeOfFlight:F1} s.");
                 return true;
             }
 

@@ -33,8 +33,8 @@ namespace RocketPod
                 {
                     _logged = true;
                     Plugin.Log.LogWarning(
-                        "[Tenpin] No stock particle system could be borrowed for the launch " +
-                        "flash, so the pod fires with nothing at the tube. Cosmetic only.");
+                        "[Tenpin] No particle system to borrow, so the tube fires with " +
+                        "no flash.");
                 }
                 return;
             }
@@ -74,11 +74,10 @@ namespace RocketPod
             if (!_logged)
             {
                 _logged = true;
+
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Launch flash borrowed from {from}, clamped to {MaxDuration:0.##}s so " +
-                    "an 0.08 s ripple reads as separate shots. MissileLauncher.launchParticles " +
-                    "ships null and no stock weapon uses MissileLauncher, so there was nothing " +
-                    "purpose-built to copy. Author one in Unity and this stops running.");
+                    $"[Tenpin] Launch flash borrowed from {from}, clamped to " +
+                    $"{MaxDuration:0.##}s.");
             }
         }
 

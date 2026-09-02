@@ -99,13 +99,15 @@ namespace RocketPod
 
             Plugin.Log.LogInfo(
                 $"[Tenpin] SHOT AUDIT {_reported}/{Plugin.AiShotAuditCount.Value}: " +
-                $"range {shot.Range:0} m, arc {shot.Elevation:0.0} deg. " +
-                $"SOLVER predicted-vs-actual {solverError.magnitude:0} m " +
-                $"(down {Vector3.Dot(solverError, downrange):0}, cross {Vector3.Dot(solverError, cross):0}). " +
-                $"AIM predicted-vs-aimpoint {aimError.magnitude:0} m. " +
-                $"RESULT actual-vs-target {result.magnitude:0} m " +
-                $"(down {Vector3.Dot(result, downrange):0}, cross {Vector3.Dot(result, cross):0}). " +
-                $"Time of flight {tof:0.0} s against {shot.PredictedTof:0.0} s predicted.");
+                $"range {shot.Range:0} m, arc {shot.Elevation:0.0} deg.");
+            Plugin.Log.LogInfo(
+                $"[Tenpin] SOLVER {solverError.magnitude:0} m (down " +
+                $"{Vector3.Dot(solverError, downrange):0}, cross {Vector3.Dot(solverError, cross):0}).");
+            Plugin.Log.LogInfo(
+                $"[Tenpin] AIM {aimError.magnitude:0} m. RESULT {result.magnitude:0} m " +
+                $"(down {Vector3.Dot(result, downrange):0}, cross {Vector3.Dot(result, cross):0}).");
+            Plugin.Log.LogInfo(
+                $"[Tenpin] Time of flight {tof:0.0} s against {shot.PredictedTof:0.0} s.");
         }
     }
 

@@ -21,11 +21,10 @@ namespace RocketPod
                 if (!_loggedZeroCEP)
                 {
                     _loggedZeroCEP = true;
+
                     Plugin.Log.LogWarning(
-                        "[Tenpin] InertialSeekerShell.CEP is 0 on the flying prefab, so there is " +
-                        "no dispersion to scale and angular dispersion does nothing. Set it in " +
-                        "Unity - the value itself no longer matters, but it must be non-zero for " +
-                        "the offset vector to exist.");
+                        "[Tenpin] InertialSeekerShell.CEP is 0, so angular dispersion " +
+                        "does nothing.");
                 }
                 return;
             }
@@ -44,9 +43,8 @@ namespace RocketPod
                 _loggedApplied = true;
                 Plugin.Log.LogInfo(
                     $"[Tenpin] Angular dispersion active at " +
-                    $"{Plugin.DispersionMilliradians.Value:0.##} mrad. First round: slant range " +
-                    $"{slantRange:0} m, CEP {baseCEP:0.#} -> {effectiveCEP:0.#} m. Logged once " +
-                    "per session.");
+                    $"{Plugin.DispersionMilliradians.Value:0.##} mrad. First round at " +
+                    $"{slantRange:0} m, CEP {baseCEP:0.#} -> {effectiveCEP:0.#} m.");
             }
         }
     }

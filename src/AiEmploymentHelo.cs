@@ -288,7 +288,14 @@ namespace RocketPod
                 Vector3 miss = r.ImpactPoint - targetPos;
                 miss.y = 0f;
 
-                float tolerance = range * (Plugin.AiGuidanceBudgetMilliradians.Value / 1000f)
+                PluginInfo.WeaponSpec? fired =
+                    PluginInfo.WeaponForName(station.WeaponInfo != null
+                                                 ? station.WeaponInfo.weaponName
+                                                 : null);
+                PluginInfo.EmploymentSpec employment =
+                    fired?.Employment ?? PluginInfo.Weapons[0].Employment;
+
+                float tolerance = range * (employment.GuidanceBudgetMilliradians / 1000f)
                                   * Plugin.AiGateMargin.Value;
 
                 if (AiEmployment.IsStationaryTarget(target))
@@ -321,12 +328,10 @@ namespace RocketPod
                     if (!_logged)
                     {
                         _logged = true;
+
                         Plugin.Log.LogInfo(
-                            $"[Tenpin] A HELICOPTER fired from a POP-UP: {range:0} m, nose up " +
-                            $"{_commanded:0.0} deg, predicted miss {miss.magnitude:0} m. Run in level " +
-                            "and lined up, flare, shoot, break - which is what real crews do with " +
-                            "rockets, and it works here for the same reason: a large attitude a helo " +
-                            "can actually fly beats a fine correction it cannot hold. Logged once.");
+                            $"[Tenpin] A helicopter fired from a pop-up: {range:0} m, " +
+                            $"nose up {_commanded:0.0} deg, miss {miss.magnitude:0} m.");
                     }
                 }
 

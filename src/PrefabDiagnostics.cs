@@ -45,8 +45,8 @@ namespace RocketPod
                         $"({donor.mountName}) ----");
                     DumpTree(donor.prefab);
                     Plugin.Log.LogInfo(
-                        "[Tenpin] Compare the two blocks. A difference in layer, shader, scale or " +
-                        "enabled state is the answer; everything else is noise.");
+                        "[Tenpin] Compare the two blocks: layer, shader, scale or enabled " +
+                        "state.");
                 }
             }
             catch (Exception ex)
@@ -66,10 +66,9 @@ namespace RocketPod
 
             if (renderers.Length == 0)
             {
+
                 Plugin.Log.LogError(
-                    "[Tenpin]   NO Renderer anywhere in this prefab. It is instantiated on the " +
-                    "pylon and draws nothing. The mesh child was not carried into the prefab, or " +
-                    "the FBX was added as an empty. This alone explains an invisible pod.");
+                    "[Tenpin]   NO Renderer in this prefab, so it draws nothing on the pylon.");
             }
 
             int shown = 0;

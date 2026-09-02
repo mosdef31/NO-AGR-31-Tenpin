@@ -306,10 +306,7 @@ namespace RocketPod
             weaponInfo.effectiveness = role;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Anti-surface effectiveness {was:0.00} -> {AntiSurface:0.00}. At {was:0.00} " +
-                "this pod scored higher against every surface target than any guided weapon in " +
-                "the game, so an AI carrying one reached for it whatever the target was. The " +
-                "stock chooser was right and the stat was wrong. Logged once.");
+                $"[Tenpin] Anti-surface effectiveness {was:0.00} -> {AntiSurface:0.00}.");
         }
 
         private const float AntiSurface = 0.55f;
@@ -357,11 +354,9 @@ namespace RocketPod
             if (!_prunedLogged)
             {
                 _prunedLogged = true;
+
                 Plugin.Log.LogInfo(
-                    "[Tenpin] Removed the swapped-out MissileLauncher from the weapon station. " +
-                    "Hardpoint.SpawnMount registers every Weapon it finds on the mount AFTER " +
-                    "the instantiate that triggers our swap, and Destroy is deferred, so both " +
-                    "components were being counted and the ammo read high. Logged once.");
+                    "[Tenpin] Removed the swapped-out MissileLauncher from the station.");
             }
         }
 
@@ -445,13 +440,17 @@ namespace RocketPod
                 "[Tenpin] FLASH BIND: " +
                 $"system='{launchParticles.gameObject.name}' " +
                 $"parent='{(p == null ? "(none - ROOT)" : p.name)}' " +
-                $"parentUnderThisPod={oursToo} " +
-                $"simulationSpace={main.simulationSpace} " +
+                $"underThisPod={oursToo}");
+            Plugin.Log.LogInfo(
+                "[Tenpin] FLASH BIND: " +
+                $"space={main.simulationSpace} " +
                 $"customSpace='{(main.customSimulationSpace == null ? "(null)" : main.customSimulationSpace.name)}' " +
-                $"systemWorldPos={launchParticles.transform.position} " +
-                $"podWorldPos={transform.position} " +
-                $"offsetFromPod={(launchParticles.transform.position - transform.position).magnitude:0.###}m " +
                 $"scale={launchParticles.transform.lossyScale}");
+            Plugin.Log.LogInfo(
+                "[Tenpin] FLASH BIND: " +
+                $"systemPos={launchParticles.transform.position} " +
+                $"podPos={transform.position} " +
+                $"offset={(launchParticles.transform.position - transform.position).magnitude:0.###}m");
 
             foreach (ParticleSystem child in launchParticles.GetComponentsInChildren<ParticleSystem>(true))
             {
@@ -459,20 +458,19 @@ namespace RocketPod
                 ParticleSystem.MainModule cm = child.main;
                 Plugin.Log.LogInfo(
                     $"[Tenpin] FLASH BIND child: '{child.gameObject.name}' " +
-                    $"simulationSpace={cm.simulationSpace} " +
-                    $"customSpace='{(cm.customSimulationSpace == null ? "(null)" : cm.customSimulationSpace.name)}' " +
-                    $"emitting={child.emission.enabled} " +
+                    $"space={cm.simulationSpace} " +
+                    $"customSpace='{(cm.customSimulationSpace == null ? "(null)" : cm.customSimulationSpace.name)}'");
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] FLASH BIND child: emitting={child.emission.enabled} " +
                     $"startSpeed={cm.startSpeed.constantMax:0.##} " +
                     $"lifetime={cm.startLifetime.constantMax:0.###}s " +
                     $"active={child.gameObject.activeInHierarchy}");
             }
 
             if (!oursToo)
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] FLASH BIND: the launch flash is NOT parented under this pod. " +
-                    "Under a Local simulation space every particle is then positioned relative " +
-                    "to a transform that moves independently, which is the displaced-then-" +
-                    "overshooting flash. Reparent it or author the effect in Unity.");
+                    "[Tenpin] FLASH BIND: the flash is not parented under this pod.");
         }
 
         private void LogFlashEmit(Transform tube, Vector3 localAt)
@@ -486,10 +484,12 @@ namespace RocketPod
                 "[Tenpin] FLASH EMIT: " +
                 $"tubeWorld={tube.position} " +
                 $"convertedLocal={localAt} " +
-                $"roundTripWorld={back} " +
+                $"roundTripWorld={back}");
+            Plugin.Log.LogInfo(
+                "[Tenpin] FLASH EMIT: " +
                 $"roundTripError={(back - tube.position).magnitude:0.###}m " +
-                $"systemWorldPos={launchParticles.transform.position} " +
-                $"systemParent='{(launchParticles.transform.parent == null ? "(none - ROOT)" : launchParticles.transform.parent.name)}'");
+                $"systemPos={launchParticles.transform.position} " +
+                $"parent='{(launchParticles.transform.parent == null ? "(none - ROOT)" : launchParticles.transform.parent.name)}'");
         }
 
         private void PlayTubeEffects(Transform tube)

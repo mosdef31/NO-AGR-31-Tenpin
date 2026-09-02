@@ -49,10 +49,9 @@ namespace RocketPod
             }
 
             if (done == 0)
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] Warhead effects: no rocket was filled. Every round in this " +
-                    "mod will fizzle rather than explode, and one that detonates below " +
-                    "sea level will throw inside the engine.");
+                    "[Tenpin] Warhead effects: no rocket was filled, so rounds will fizzle.");
         }
 
         private static bool ApplyTo(MissileDefinition def)
@@ -60,9 +59,9 @@ namespace RocketPod
             GameObject? ourPrefab = def.unitPrefab;
             if (ourPrefab == null)
             {
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] Warhead effects: our rocket prefab is not resolved yet, so nothing " +
-                    "to fill. This is expected if the bundle failed to load.");
+                    "[Tenpin] Warhead effects: the rocket prefab is not resolved yet.");
                 return false;
             }
 
@@ -118,12 +117,10 @@ namespace RocketPod
             object? donorWarhead = FindDonor(fWarhead, fields, out string donorName);
             if (donorWarhead == null)
             {
+
                 Plugin.Log.LogError(
-                    "[Tenpin] Warhead effects: could not find a stock rocket to borrow from, and " +
-                    $"{missing.Length} field(s) are unset ({string.Join(", ", missing)}). " +
-                    "terrainEffect, armorEffect and underwaterEffect are NOT null-checked by " +
-                    "Missile+Warhead.Detonate, so the rocket will throw on impact and do nothing. " +
-                    "Assign them in Unity.");
+                    $"[Tenpin] No stock rocket to borrow from and {missing.Length} field(s) " +
+                    $"unset: {string.Join(", ", missing)}.");
                 return false;
             }
 
@@ -141,9 +138,7 @@ namespace RocketPod
 
             Plugin.Log.LogInfo(
                 $"[Tenpin] Warhead effects on '{def.jsonKey}': filled {filled} of " +
-                $"{missing.Length} unset ({string.Join(", ", missing)}) from '{donorName}'. " +
-                "Assign real ones in Unity when convenient - borrowed effects are tuned " +
-                "for the donor's yield, not ours.");
+                $"{missing.Length} from '{donorName}'.");
 
             string[] stillNull = fields
                 .Take(3)
@@ -152,10 +147,10 @@ namespace RocketPod
                 .ToArray();
             if (stillNull.Length > 0)
             {
+
                 Plugin.Log.LogError(
-                    $"[Tenpin] '{def.jsonKey}' STILL UNSET after borrowing: " +
-                    $"{string.Join(", ", stillNull)}. These are not null-checked by the game, " +
-                    "so the rocket will throw on impact and do no damage. Assign them in Unity.");
+                    $"[Tenpin] '{def.jsonKey}' still unset after borrowing: " +
+                    $"{string.Join(", ", stillNull)}.");
                 return false;
             }
 
@@ -203,10 +198,8 @@ namespace RocketPod
                 .First();
 
             Plugin.Log.LogWarning(
-                $"[Tenpin] No warhead effect donor matched any of " +
-                $"'{Plugin.WarheadEffectDonor.Value}', so '{fallback.Name}' was chosen " +
-                "automatically. That is the old behaviour and it is what read as a weak " +
-                "detonation. Candidate names are the missiles listed by the effect donor scan.");
+                $"[Tenpin] No warhead donor matched '{Plugin.WarheadEffectDonor.Value}', " +
+                $"so '{fallback.Name}' was chosen.");
 
             donorName = fallback.Name;
             return fallback.Warhead;

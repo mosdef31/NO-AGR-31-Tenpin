@@ -29,12 +29,10 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Round RCS {have:0.###} -> {want:0.###}. The bundle authors this " +
-                        "at zero, which makes the weapon perfectly uninterceptable and therefore " +
-                        "untestable against defences. This is a test instrument, not a change to " +
-                        "the survivability the spec settled: set RoundRCS to 0 to restore it. " +
-                        "Logged once per session.");
+                        $"[Tenpin] Round RCS {have:0.###} -> {want:0.###}. " +
+                        "Set RoundRCS to 0 to restore it.");
                 }
             }
             catch (Exception ex)
@@ -74,11 +72,10 @@ namespace RocketPod
                     if (!_loggedBroken)
                     {
                         _loggedBroken = true;
+
                         Plugin.Log.LogWarning(
-                            "[Tenpin] Cannot reach Missile.motors[].IR_intensity by reflection, so " +
-                            $"the round keeps its authored IR (motors={_fMotors != null}, " +
-                            $"IR_intensity={_fIntensity != null}). The game moved or renamed one of " +
-                            "them; check Missile in the 0.34 decompile. Logged once per session.");
+                            "[Tenpin] Cannot reach Missile.motors[].IR_intensity " +
+                            $"(motors={_fMotors != null}, field={_fIntensity != null}).");
                     }
                     return;
                 }
@@ -97,13 +94,10 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Round IR_intensity set to {want:0.###} on {motors.Length} " +
-                        "motor stage(s). The source is added at ignition and Motor.Burnout never " +
-                        "removes it, so the round is IR-visible for its whole flight, not just the " +
-                        "1.8 s burn. Owner's decision 2026-08-09, reversing the spec's " +
-                        "uninterceptable call. Set RoundIRSignature to false to restore it. " +
-                        "Logged once per session.");
+                        $"[Tenpin] Round IR_intensity {want:0.###} on {motors.Length} " +
+                        "stage(s). RoundIRSignature false restores it.");
                 }
             }
             catch (Exception ex)

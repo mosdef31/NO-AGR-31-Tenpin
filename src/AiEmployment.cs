@@ -45,6 +45,8 @@ namespace RocketPod
             internal int Bursts;
             internal float AttackStarted;
 
+            internal PluginInfo.EmploymentSpec Employment;
+
             internal float SolutionSince;
 
             internal float MinRangeSince;
@@ -128,10 +130,10 @@ namespace RocketPod
 
             if (SetCombatModeMethod == null || AttackModeType == null)
             {
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] Could not resolve AIPilotCombatModes.SetCombatMode, so AI flights " +
-                    "cannot be told to break off after a pass. They will keep attacking until the " +
-                    "stock logic stops them.");
+                    "[Tenpin] No AIPilotCombatModes.SetCombatMode, so flights cannot " +
+                    "break off after a pass.");
                 return;
             }
 
@@ -189,16 +191,17 @@ namespace RocketPod
             return best;
         }
 
-        private static int SalvoFor(Unit target, float far)
+        private static int SalvoFor(Unit target, float far,
+                                    in PluginInfo.EmploymentSpec employment)
         {
-            float rounds = Mathf.Lerp(Plugin.AiSalvoNear.Value, Plugin.AiSalvoFar.Value, far);
+            float rounds = Mathf.Lerp(employment.SalvoNear, employment.SalvoFar, far);
 
             bool overwhelm = NeedsOverwhelming(target);
-            if (overwhelm) rounds *= Plugin.AiOverwhelmFactor.Value;
+            if (overwhelm) rounds *= employment.OverwhelmFactor;
 
             int cap = overwhelm
-                ? Mathf.RoundToInt(PluginInfo.Rounds18 * Plugin.AiOverwhelmFactor.Value)
-                : PluginInfo.Rounds18;
+                ? Mathf.RoundToInt(employment.PodCeiling * employment.OverwhelmFactor)
+                : employment.PodCeiling;
 
             return Mathf.Clamp(Mathf.RoundToInt(rounds), 1, cap);
         }
@@ -279,7 +282,8 @@ namespace RocketPod
             return target.definition.roleIdentity.antiAir > 0f;
         }
 
-        internal static bool WorthSalvo(Unit target, Aircraft shooter)
+        internal static bool WorthSalvo(Unit target, Aircraft shooter,
+                                        in PluginInfo.EmploymentSpec employment)
         {
             if (target == null || target.definition == null) return false;
 
@@ -287,6 +291,8 @@ namespace RocketPod
 
             if (target is Building) return true;
             if (target is Ship) return true;
+
+            if (!employment.Saturation) return target is GroundVehicle;
 
             if (target is GroundVehicle)
             {
@@ -363,12 +369,19 @@ namespace RocketPod
             Brain brain = BrainFor(state);
             SetReporter(aircraft);
 
+            PluginInfo.WeaponSpec? fired =
+                PluginInfo.WeaponForName(station.WeaponInfo != null
+                                             ? station.WeaponInfo.weaponName
+                                             : null);
+            brain.Employment = fired?.Employment ?? PluginInfo.Weapons[0].Employment;
+            PluginInfo.EmploymentSpec employment = brain.Employment;
+
             if (!_loggedReached)
             {
                 _loggedReached = true;
+
                 Plugin.Log.LogInfo(
-                    "[Tenpin] AI employment reached the firing branch for the first time. If no " +
-                    "shot follows, the lines below say which test declined it. Logged once.");
+                    "[Tenpin] AI employment reached the firing branch for the first time.");
             }
             Vector3 targetPos = known.AsVector3();
             Vector3 here = aircraft.transform.GlobalPosition().AsVector3();
@@ -404,7 +417,7 @@ namespace RocketPod
                 return true;
             }
 
-            if (range < Plugin.AiPreferredMinRange.Value)
+            if (range < employment.PreferredMinRange)
             {
                 if (brain.MinRangeSince <= 0f) brain.MinRangeSince = Time.timeSinceLevelLoad;
             }
@@ -415,11 +428,11 @@ namespace RocketPod
 
             float quietSince = Mathf.Max(brain.LastPromisingAim, brain.MinRangeSince);
 
-            if (range < Plugin.AiPreferredMinRange.Value && station.Ammo > 0 &&
+            if (range < employment.PreferredMinRange && station.Ammo > 0 &&
                 brain.MinRangeSince > 0f &&
                 Time.timeSinceLevelLoad - quietSince > Plugin.AiGiveUpSeconds.Value)
             {
-                BreakOff(state, brain, $"inside {Plugin.AiPreferredMinRange.Value:0} m with " +
+                BreakOff(state, brain, $"inside {employment.PreferredMinRange:0} m with " +
                                        $"{station.Ammo} round(s) left and no solution developing " +
                                        $"for {Plugin.AiGiveUpSeconds.Value:0} s - opening the range");
                 return true;
@@ -487,7 +500,7 @@ namespace RocketPod
                 {
                     brain.ClassifiedTarget = target.persistentID;
                     brain.NextClassifyTime = Time.timeSinceLevelLoad + 5f;
-                    brain.TargetWorthSalvo = WorthSalvo(target, aircraft);
+                    brain.TargetWorthSalvo = WorthSalvo(target, aircraft, employment);
                 }
 
                 if (!brain.TargetWorthSalvo)
@@ -552,10 +565,10 @@ namespace RocketPod
             Vector3 miss = calibrated - targetPos;
             miss.y = 0f;
 
-            float reach = Mathf.Max(1f, Plugin.AiFullSalvoRange.Value);
+            float reach = Mathf.Max(1f, employment.FullSalvoRange);
             float far = Mathf.Clamp01(range / reach);
 
-            float tolerance = range * (Plugin.AiGuidanceBudgetMilliradians.Value / 1000f)
+            float tolerance = range * (employment.GuidanceBudgetMilliradians / 1000f)
                               * Plugin.AiGateMargin.Value;
 
             if (IsStationary(target)) tolerance *= Plugin.AiStationaryTolerance.Value;
@@ -626,9 +639,9 @@ namespace RocketPod
             brain.PassStartedAt = Time.timeSinceLevelLoad;
 
             brain.BurstUntil = Mathf.Max(brain.BurstUntil,
-                                         Time.timeSinceLevelLoad + Plugin.AiBurstSeconds.Value);
+                                         Time.timeSinceLevelLoad + employment.BurstSeconds);
 
-            int budget = SalvoFor(target, far);
+            int budget = SalvoFor(target, far, employment);
 
             if (brain.RoundsThisPass > 0 && brain.BurstUntil > 0f &&
                 Time.timeSinceLevelLoad > brain.BurstUntil)
@@ -638,7 +651,7 @@ namespace RocketPod
 
                 brain.BurstUntil = -1f;
 
-                Unit? next = brain.Bursts < Plugin.AiBurstsPerApproach.Value &&
+                Unit? next = brain.Bursts < employment.BurstsPerApproach &&
                              station.Ammo > 0 &&
                              range > Plugin.AiAbortRange.Value * 1.5f
                     ? NextInCluster(target, aircraft, brain)
@@ -665,7 +678,7 @@ namespace RocketPod
                     return true;
                 }
 
-                if (brain.Bursts < Plugin.AiBurstsPerApproach.Value &&
+                if (brain.Bursts < employment.BurstsPerApproach &&
                     station.Ammo > 0 &&
                     brain.RoundsOnTarget < budget &&
                     range > Plugin.AiAbortRange.Value * 1.5f)
@@ -697,7 +710,7 @@ namespace RocketPod
             {
                 brain.Engaged.Add(target.persistentID);
 
-                Unit? next = brain.Engaged.Count < Plugin.AiTargetsPerPass.Value
+                Unit? next = brain.Engaged.Count < employment.TargetsPerPass
                     ? NextInCluster(target, aircraft, brain)
                     : null;
 
@@ -749,18 +762,17 @@ namespace RocketPod
                 if (!_loggedProfile)
                 {
                     _loggedProfile = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] AI employment is live. This shot was at {range:0} m on a " +
-                        $"{(brain.Lofted ? "LOFTED" : "LOW")} arc of {brain.ElevationDegrees:0.0} deg, " +
-                        $"predicted miss {miss.magnitude:0} m against a {tolerance:0} m tolerance, " +
-                        $"salvo budget {budget} round(s)" +
-                        (brain.ColumnSize > 1 ? $", aimed at a column of {brain.ColumnSize}" : "") +
-                        $", aim point from " +
-                        $"{(brain.RoutedPrediction ? "the target's OWN ROUTE" : "extrapolated heading")}. " +
-                        "One continuous profile: the arc, the " +
-                        "volume and the tolerance all scale with range, and the stock AI's own " +
-                        "release test is nose alignment, which is meaningless for a round that " +
-                        "does not steer. Logged once.");
+                        $"[Tenpin] AI employment is live. Shot at {range:0} m on a " +
+                        $"{(brain.Lofted ? "LOFTED" : "LOW")} arc of {brain.ElevationDegrees:0.0} deg.");
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] Predicted miss {miss.magnitude:0} m against {tolerance:0} m, " +
+                        $"budget {budget} round(s)" +
+                        (brain.ColumnSize > 1 ? $", column of {brain.ColumnSize}" : "") + ".");
+                    Plugin.Log.LogInfo(
+                        "[Tenpin] Aim point from " +
+                        $"{(brain.RoutedPrediction ? "the target's own route" : "extrapolated heading")}.");
                 }
             }
 
@@ -812,9 +824,6 @@ namespace RocketPod
                     : null;
                 if (station == null || station.WeaponInfo == null) return true;
 
-                // Both pods share one weaponName, deliberately - see PluginInfo.
-                // That is exactly what makes this one test cover all three
-                // mounts without naming any of them.
                 if (!PluginInfo.IsOurWeaponName(station.WeaponInfo.weaponName)) return true;
 
                 return !AiEmployment.RunAttack(__instance, pilot, aircraft, station);

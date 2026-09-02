@@ -446,7 +446,8 @@ namespace RocketPod.Hud
                 FootprintRing(cam, target, cep * 2.08f * ringScale, Fade(cue, 0.40f), 1.3f * px, out _);
 
                 bool haveTarget = TryProject(cam, target, out Vector2 tgt);
-                bool targetHidden = haveTarget && Hidden(cam, target);
+
+                bool targetHidden = haveTarget && (_coasting || Hidden(cam, target));
                 if (haveTarget)
                 {
                     float d = 7f * px;
@@ -534,10 +535,11 @@ namespace RocketPod.Hud
                     _lastLoggedHeight = target.y;
                     bool got = AimpointChannel.TrySampleGroundHeight(target, out float ground);
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Locked target sits at {target.y:F0} m; the ground sample under it " +
-                        (got ? $"reads {ground:F0} m" : "FAILED and would have read 0 m") +
-                        $". Aiming at the unit's own height, {Mathf.Abs(target.y - (got ? ground : 0f)):F0} m " +
-                        "from where this used to aim.");
+                        $"[Tenpin] Locked target at {target.y:F0} m; ground under it " +
+                        (got ? $"reads {ground:F0} m" : "FAILED, would read 0 m") + ".");
+                    Plugin.Log.LogInfo(
+                        "[Tenpin] Aiming at the unit's own height, " +
+                        $"{Mathf.Abs(target.y - (got ? ground : 0f)):F0} m from the old aimpoint.");
                 }
 
                 return target.y;
@@ -550,10 +552,9 @@ namespace RocketPod.Hud
             if (!_loggedSampleFail)
             {
                 _loggedSampleFail = true;
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] The ground under the designated point could not be sampled, so its " +
-                    "height is left as it was rather than dropped to sea level. Dropping it is what " +
-                    "used to put the salvo past a target on high ground. Logged once.");
+                    "[Tenpin] The ground under the designated point could not be sampled.");
             }
 
             return target.y;
@@ -565,17 +566,31 @@ namespace RocketPod.Hud
         private Vector3 _leadFrom;
         private bool _hasLead;
 
+        private Vector3 _lostPos;
+        private Vector3 _lostVelocity;
+        private float _lostRadius;
+        private float _lostAt = float.NegativeInfinity;
+        private bool _coasting;
+
+        private const float LostTrackHoldSeconds = 20f;
+
         private bool TryGetDesignation(Aircraft aircraft, WeaponStation station,
                                        float timeOfFlight, out Vector3 target)
         {
             target = default;
             _designationRadius = 0f;
             _hasLead = false;
+            _coasting = false;
 
             Unit? locked = SelectedTarget(aircraft, station);
             if (locked != null)
             {
                 Vector3 nowAt = locked.transform.GlobalPosition().AsVector3();
+
+                _lostPos = nowAt;
+                _lostVelocity = locked.rb != null ? locked.rb.velocity : Vector3.zero;
+                _lostRadius = Mathf.Max(0f, locked.maxRadius);
+                _lostAt = Time.time;
 
                 target = TargetLead.PredictPosition(locked, timeOfFlight, out _);
 
@@ -586,6 +601,25 @@ namespace RocketPod.Hud
                 }
 
                 _designationRadius = Mathf.Max(0f, locked.maxRadius);
+
+                _designationHasHeight = true;
+                return true;
+            }
+
+            if (Plugin.HudLostTrackLead.Value
+                && _lostAt > float.NegativeInfinity
+                && Time.time - _lostAt <= LostTrackHoldSeconds
+                && _lostVelocity.sqrMagnitude > 1f)
+            {
+                float coasted = (Time.time - _lostAt) + Mathf.Max(0f, timeOfFlight);
+
+                _leadFrom = _lostPos + _lostVelocity * (Time.time - _lostAt);
+                target = _lostPos + _lostVelocity * coasted;
+
+                _hasLead = (target - _leadFrom).sqrMagnitude > 1f;
+                _coasting = true;
+
+                _designationRadius = _lostRadius;
 
                 _designationHasHeight = true;
                 return true;
@@ -895,12 +929,10 @@ namespace RocketPod.Hud
                         if (!_loggedDashBudget)
                         {
                             _loggedDashBudget = true;
+
                             Plugin.Log.LogWarning(
-                                "[Tenpin] A dotted polyline hit its dash budget and was cut " +
-                                $"short ({MaxDashesPerPolyline}). That means a projected span " +
-                                "was enormous - which is the CCRP reach-arc stutter this budget " +
-                                "exists to stop - and `ReachArc`'s own clamp should have caught " +
-                                "it first. Logged once.");
+                                "[Tenpin] A dotted polyline hit its dash budget " +
+                                $"({MaxDashesPerPolyline}) and was cut short.");
                         }
                         return;
                     }
@@ -1325,10 +1357,8 @@ namespace RocketPod.Hud
                 _specs[prefab] = cached;
 
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] HUD flight model solved from '{prefab.name}', the round " +
-                    $"'{station?.WeaponInfo?.weaponName}' actually fires. Solved per weapon " +
-                    "rather than per mod since 2026-08-31; a weapon added later needs no " +
-                    "change here.");
+                    $"[Tenpin] HUD flight model solved from '{prefab.name}', which " +
+                    $"'{station?.WeaponInfo?.weaponName}' fires.");
             }
             return cached;
         }
@@ -1438,9 +1468,9 @@ namespace RocketPod.Hud
                 if (!_loggedFontMissing)
                 {
                     _loggedFontMissing = true;
+
                     Plugin.Log.LogWarning(
-                        "[Tenpin] No TextMeshProUGUI found to borrow a font from, so the HUD's " +
-                        "text readouts will not render. The vector cues are unaffected.");
+                        "[Tenpin] No font to borrow, so the HUD text will not render.");
                 }
             }
             return null;

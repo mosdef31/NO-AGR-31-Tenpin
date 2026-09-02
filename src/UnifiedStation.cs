@@ -20,8 +20,7 @@ namespace RocketPod
             catch (Exception ex)
             {
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] Could not put both pods on one station, so they will appear as two " +
-                    $"separate weapons. Everything else is unaffected: {ex.Message}");
+                    $"[Tenpin] Pods not merged, so they appear as two weapons: {ex.Message}");
             }
         }
 
@@ -58,12 +57,8 @@ namespace RocketPod
             if (moved == 0) return;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Repointed {moved} launcher(s) so pods firing the same rocket share one " +
-                $"station, across {canonicals.Count} rocket(s). WeaponManager keys a station off " +
-                "reference equality of this asset, so two identical copies were two stations. Pods " +
-                "firing DIFFERENT rockets keep their own, or the second weapon flies under the " +
-                "first's name, icon and trajectory. The mounts keep their own WeaponInfo, so the " +
-                "loadout still lists and prices every pod separately.");
+                $"[Tenpin] Repointed {moved} launcher(s) onto {canonicals.Count} " +
+                "shared station(s), one per rocket.");
         }
 
     }

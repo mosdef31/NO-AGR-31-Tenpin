@@ -25,10 +25,10 @@ namespace RocketPod
                     if (!_loggedBroken)
                     {
                         _loggedBroken = true;
+
                         Plugin.Log.LogWarning(
-                            "[Tenpin] Could not find WeaponStation.weaponIndex by reflection, so " +
-                            "multi-pod cycling is off. With more than one pod on a station only " +
-                            "one rocket per pod will fire. Re-check the decompile.");
+                            "[Tenpin] No WeaponStation.weaponIndex found, so multi-pod " +
+                            "cycling is off.");
                     }
                     return;
                 }
@@ -52,11 +52,10 @@ namespace RocketPod
                     if (!_loggedWrap)
                     {
                         _loggedWrap = true;
+
                         Plugin.Log.LogInfo(
-                            $"[Tenpin] Wrapped WeaponStation.weaponIndex {index} -> {i} across " +
-                            $"{weapons.Count} pod(s). WeaponStation.LaunchMount never wraps it for a " +
-                            "MissileLauncher station, so without this the station goes silent after " +
-                            "one rocket per pod with most of its ammo unfired.");
+                            $"[Tenpin] Wrapped WeaponStation.weaponIndex {index} -> {i} " +
+                            $"across {weapons.Count} pod(s).");
                     }
                     return;
                 }

@@ -92,21 +92,18 @@ namespace RocketPod
 
             if (repaired.Count > 0)
             {
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] The pod arrived with {repaired.Count} texture slot(s) unbound and " +
-                    $"they have been rebound by name: {string.Join(", ", repaired.ToArray())}. This " +
-                    "means the bundle in front of us is the 2026-08-12 export, whose materials were " +
-                    "stripped of their shader reference and lost their texture bindings with it. " +
-                    "The weapon is correct now; re-export from Unity to stop needing this.");
+                    $"[Tenpin] Rebound {repaired.Count} unbound texture slot(s) by name: " +
+                    $"{string.Join(", ", repaired.ToArray())}.");
             }
 
             if (missing.Count > 0)
             {
+
                 Plugin.Log.LogError(
-                    $"[Tenpin] {missing.Count} texture slot(s) are empty and the texture could not " +
-                    $"be found to rebind: {string.Join(", ", missing.ToArray())}. The pod will " +
-                    "render white or flat. This one needs a re-export; the textures are not in the " +
-                    "bundle at all.");
+                    $"[Tenpin] {missing.Count} texture slot(s) empty with nothing to rebind: " +
+                    $"{string.Join(", ", missing.ToArray())}.");
             }
         }
 

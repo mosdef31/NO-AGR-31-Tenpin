@@ -21,16 +21,12 @@ namespace RocketPod
                 if (!_warned)
                 {
                     _warned = true;
+
                     Plugin.Log.LogError(
-                        $"[Tenpin] '{__instance.jsonKey}' has a NULL prefab, so " +
-                        "WeaponMount.Initialize was skipped to keep the game running. THE POD " +
-                        "WILL NOT WORK - it has no mounted prefab. The bundle's WeaponMount asset " +
-                        "has lost its prefab reference, which happens when a Unity script re-saves " +
-                        "the mounted prefab and SaveAsPrefabAsset regenerates the root's local " +
-                        "fileID. Re-assign it in Unity and re-export. Without this guard the " +
-                        "unchecked dereference inside Initialize throws through " +
-                        "Encyclopedia.Preload and MainMenu.StartAsync never completes, so the " +
-                        "MAIN MENU NEVER APPEARS.");
+                        $"[Tenpin] '{__instance.jsonKey}' has a NULL prefab, so this pod " +
+                        "will not work.");
+                    Plugin.Log.LogError(
+                        "[Tenpin] Re-assign the mounted prefab in Unity and re-export.");
                 }
 
                 return false;

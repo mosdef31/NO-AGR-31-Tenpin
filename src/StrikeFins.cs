@@ -48,10 +48,8 @@ namespace RocketPod
                 {
 
                     Plugin.Log.LogError(
-                        $"[Tenpin] AGR-51 round has no '{DeployedPrefix}{i}' child, so there is no " +
-                        "deployed pose to swing to and this fin will stay folded. The bundle is " +
-                        "older than the DLL: re-run art/make_strike.py with --fbx, rebuild the " +
-                        "prefab and re-export tenpin.nobp.");
+                        $"[Tenpin] AGR-51 has no '{DeployedPrefix}{i}' child, so this fin " +
+                        "stays folded.");
                     deployed[i] = folded[i];
                     continue;
                 }
@@ -66,11 +64,10 @@ namespace RocketPod
 
             if (found != FinCount)
             {
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] AGR-51 round has {found} of {FinCount} fin pairs named " +
-                    $"{FinPrefix}0..{FinPrefix}{FinCount - 1} and {DeployedPrefix}0.." +
-                    $"{DeployedPrefix}{FinCount - 1}. The missing ones cannot deploy. This is an " +
-                    "asset fault, not a timing one - check the round prefab's children.");
+                    $"[Tenpin] AGR-51 has {found} of {FinCount} fin pairs, so the rest " +
+                    "cannot deploy.");
             }
 
             _fins = fins;

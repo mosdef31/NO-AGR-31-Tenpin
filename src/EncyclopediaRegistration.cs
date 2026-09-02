@@ -24,8 +24,7 @@ namespace RocketPod
             catch (Exception ex)
             {
                 Plugin.Log.LogError(
-                    "[Tenpin] Encyclopedia registration prefix threw (non-fatal, the pod may be " +
-                    $"unregistered this run): {ex}");
+                    $"[Tenpin] Encyclopedia registration threw, the pod may be unregistered: {ex}");
             }
         }
     }
@@ -40,6 +39,8 @@ namespace RocketPod
         private static MissileDefinition? _def;
 
         private static int _resolveAttempts;
+
+        private static bool _resolveReported;
         private static bool _addedLogged;
 
         internal static IList<WeaponMount> ResolvedMounts => _mounts;
@@ -91,18 +92,15 @@ namespace RocketPod
                     .ToArray());
 
                 Plugin.Log.LogInfo(
-                    "[Tenpin] Registered from the DLL prefix, which runs before the manifest's " +
-                    "OpAddToEncyclopedia gets its turn. Blueprinter will log one 'Duplicate ... " +
-                    "JSON key' line per entry immediately afterwards; that is it finding our " +
-                    "assets already present, not failing to add them. Either path alone is " +
-                    "sufficient - see GOTCHAS.md.");
+                    "[Tenpin] Registered from the DLL prefix. The 'Duplicate JSON key' " +
+                    "lines next are benign.");
 
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Registered into Encyclopedia - {_mounts.Count} mount(s): {list}; " +
+                    $"[Tenpin] Registered {_mounts.Count} mount(s): {list}; " +
                     $"{_defs.Count} rocket(s): " +
                     string.Join(", ", _defs.Where(d => d != null)
                                            .Select(d => $"'{d.jsonKey}'").ToArray()) +
-                    ". AfterLoad's rebuild will index them.");
+                    ".");
             }
         }
 
@@ -207,13 +205,10 @@ namespace RocketPod
             int expectedAmmo = PluginInfo.RoundsFor(mount.jsonKey);
             if (expectedAmmo > 0 && mount.ammo != expectedAmmo)
             {
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] {mount.jsonKey}: WeaponMount.ammo was {mount.ammo}, restoring {expectedAmmo}. " +
-                    "Something ran WeaponMount.Initialize() with weaponPrefab visible and took its " +
-                    "MountedMissile branch, which counts Weapon components - this pod has one, the " +
-                    "MissileLauncher, so the whole pod collapses to a single round. If this line " +
-                    "appears every session the StoreCard hiding is not covering some call path; the " +
-                    "pod is correct either way because of this restore.");
+                    $"[Tenpin] {mount.jsonKey}: WeaponMount.ammo was {mount.ammo}, " +
+                    $"restored to {expectedAmmo}.");
                 mount.ammo = expectedAmmo;
             }
 
@@ -231,11 +226,10 @@ namespace RocketPod
             string key = mount.jsonKey ?? mount.name ?? "?";
             if (changed && _fixupLogged.Add(key))
             {
+
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] {key}: derived mountName '{expectedName}' and mass {expectedMass:F0} kg. " +
-                    "WeaponMount.Initialize() only fills these for a MountedMissile or a gun pod, " +
-                    "and a MissileLauncher pod is neither, so without this the loadout entry has " +
-                    "no name and no mass.");
+                    $"[Tenpin] {key}: derived mountName '{expectedName}' and " +
+                    $"mass {expectedMass:F0} kg.");
             }
         }
 
@@ -262,12 +256,15 @@ namespace RocketPod
             if (_mounts.Count == 0)
             {
 
-                if (_resolveAttempts < 3) return false;
+                if (_resolveAttempts < 60 || _resolveReported) return false;
+                _resolveReported = true;
 
                 Plugin.Log.LogError(
-                    "[Tenpin] Could not resolve the WeaponMount from any loaded bundle or from disk. " +
-                    $"Expected a bundle asset whose path contains '{PluginInfo.MountAssetFragment}'. " +
+                    "[Tenpin] Could not resolve the WeaponMount from any bundle or disk. " +
                     "The pod cannot register.");
+                Plugin.Log.LogError(
+                    $"[Tenpin] Expected an asset whose path contains " +
+                    $"'{PluginInfo.MountAssetFragment}'.");
 
                 DumpOurBundleContents();
                 return false;
@@ -275,10 +272,10 @@ namespace RocketPod
 
             if (_def == null)
             {
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] Resolved the WeaponMount but not the MissileDefinition (fragment " +
-                    $"'{PluginInfo.MissileDefAssetFragment}'). The pod will register but the rocket's " +
-                    "Encyclopedia entry will be incomplete.");
+                    "[Tenpin] No MissileDefinition resolved, so the rocket's entry " +
+                    "will be incomplete.");
             }
 
             foreach (WeaponMount mount in _mounts)
@@ -294,18 +291,17 @@ namespace RocketPod
                 string key = mount.jsonKey ?? "";
                 if (!string.IsNullOrEmpty(key) && !seen.Add(key))
                 {
+
                     Plugin.Log.LogError(
-                        $"[Tenpin] Two WeaponMounts in the bundle share the jsonKey '{key}'. " +
-                        "Encyclopedia.AfterLoad adds them to a dictionary by key and will throw on " +
-                        "the second, taking every weapon in the game with it. Fix one in Unity.");
+                        $"[Tenpin] Two WeaponMounts share the jsonKey '{key}'. " +
+                        "Encyclopedia.AfterLoad will throw.");
                 }
                 if (!string.IsNullOrEmpty(key) && !PluginInfo.IsOurMount(key))
                 {
+
                     Plugin.Log.LogWarning(
-                        $"[Tenpin] Bundle WeaponMount jsonKey '{key}' is none of " +
-                        $"{PluginInfo.MountKeyList}. Using it anyway, but " +
-                        "the store card and the round-count check both key off this exactly, so fix " +
-                        "it in Unity and re-export.");
+                        $"[Tenpin] WeaponMount jsonKey '{key}' is none of " +
+                        $"{PluginInfo.MountKeyList}. Fix it in Unity.");
                 }
             }
 
@@ -346,8 +342,8 @@ namespace RocketPod
             if (trimmed == key) return;
 
             Plugin.Log.LogWarning(
-                $"[Tenpin] Asset '{asset.name}' has a jsonKey with stray whitespace: '{key}' -> " +
-                $"'{trimmed}'. Trimming so lookups match. Fix it at source in Unity and re-export.");
+                $"[Tenpin] '{asset.name}' jsonKey has stray whitespace: '{key}'. " +
+                $"Trimmed to '{trimmed}'.");
             key = trimmed;
         }
 
@@ -381,16 +377,16 @@ namespace RocketPod
                 if (!foundAny)
                 {
                     Plugin.Log.LogError(
-                        "[Tenpin] No loaded bundle contains ANY asset with 'tenpin' in its path. " +
-                        "Either the bundle did not load, or nothing was assigned to it.");
+                        "[Tenpin] No loaded bundle has any asset with 'tenpin' in its path.");
+                    Plugin.Log.LogError(
+                        "[Tenpin] Either the bundle did not load, or nothing was assigned to it.");
                 }
                 else
                 {
+
                     Plugin.Log.LogError(
-                        "[Tenpin] If the list above has the prefabs, the WeaponInfo and the " +
-                        "MissileDefinition but no WeaponMount, that is the whole problem: tick " +
-                        "the WeaponMount asset into the bundle and re-export. Nothing references " +
-                        "it, so it is the one asset that is never pulled in as a dependency.");
+                        "[Tenpin] If that list has no WeaponMount, tick it into the bundle " +
+                        "and re-export.");
                 }
             }
             catch (Exception ex)

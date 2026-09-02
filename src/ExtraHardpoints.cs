@@ -7,7 +7,6 @@ namespace RocketPod
 
     internal static class ExtraHardpoints
     {
-        private static bool _applied;
 
         private static string DescribeAircraft(string key, WeaponManager wm)
         {
@@ -58,6 +57,21 @@ namespace RocketPod
             return k == Normalize("COIN") || k == Normalize("CAS1");
         }
 
+        private static readonly Dictionary<string, string[]> NamedMounts =
+            new Dictionary<string, string[]>
+            {
+
+                ["Aryx_PropAttacker1"] = new[] { PluginInfo.MountKey, PluginInfo.MountKey51 },
+            };
+
+        private static string[]? NamedMountsFor(string key)
+        {
+            string k = Normalize(key);
+            foreach (KeyValuePair<string, string[]> kv in NamedMounts)
+                if (Normalize(kv.Key) == k) return kv.Value;
+            return null;
+        }
+
         private static bool Resolve(string name, Dictionary<string, WeaponManager> managers,
                                     List<WeaponManager> all, out WeaponManager found,
                                     out string how)
@@ -82,10 +96,15 @@ namespace RocketPod
             return false;
         }
 
+        internal static IList<string> MissingAircraft => _missing;
+
+        private static List<string> _missing = new List<string>();
+
+        internal static bool Complete { get; private set; }
+
         internal static void Apply(bool force = false)
         {
-            if (_applied && !force) return;
-            _applied = true;
+            if (Complete && !force) return;
 
             string spec = Plugin.ExtraHardpoints.Value;
             if (string.IsNullOrWhiteSpace(spec)) return;
@@ -93,9 +112,9 @@ namespace RocketPod
             WeaponMount? mount = EncyclopediaRegistration.ResolvedMount;
             if (mount == null)
             {
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] ExtraHardpoints skipped: the WeaponMount has not resolved yet, so " +
-                    "there is nothing to attach. This usually means the bundle did not load.");
+                    "[Tenpin] ExtraHardpoints skipped: the WeaponMount has not resolved.");
                 return;
             }
 
@@ -111,6 +130,8 @@ namespace RocketPod
                 all.Add(wm);
             }
 
+            _passes++;
+
             int attached = 0, alreadyThere = 0;
             var missing = new List<string>();
 
@@ -122,9 +143,10 @@ namespace RocketPod
                 int colon = entry.LastIndexOf(':');
                 if (colon <= 0)
                 {
+
                     Plugin.Log.LogWarning(
-                        $"[Tenpin] ExtraHardpoints: cannot parse '{entry}'. Expected Name:indices, " +
-                        "e.g. 'AttackHelo1:2,3' or 'AttackHelo1:*'.");
+                        $"[Tenpin] ExtraHardpoints: cannot parse '{entry}'. " +
+                        "Expected Name:indices.");
                     continue;
                 }
 
@@ -139,12 +161,10 @@ namespace RocketPod
                 }
 
                 if (how.Length > 0)
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] ExtraHardpoints: '{name}' is not a WeaponManager key, so it was " +
-                        $"matched by name against {DescribeAircraft(wm.name, wm)} (on \"{how}\"). " +
-                        "Modded aircraft keep their key inside a compressed bundle, so naming one " +
-                        "is the only way to reach it - check the quoted name is the aircraft you " +
-                        "meant.");
+                        $"[Tenpin] ExtraHardpoints: '{name}' matched by name against " +
+                        $"{DescribeAircraft(wm.name, wm)} (on \"{how}\").");
 
                 HardpointSet[]? sets = wm.hardpointSets;
                 if (sets == null || sets.Length == 0) continue;
@@ -159,10 +179,10 @@ namespace RocketPod
                 {
                     if (i >= sets.Length)
                     {
+
                         Plugin.Log.LogWarning(
-                            $"[Tenpin] ExtraHardpoints: {name} has {sets.Length} set(s), so index " +
-                            $"{i} does not exist. Re-run the hardpoint scan - set indices are " +
-                            "positional and move when a prefab is edited.");
+                            $"[Tenpin] ExtraHardpoints: {name} has {sets.Length} set(s), " +
+                            $"so index {i} does not exist.");
                         continue;
                     }
 
@@ -171,13 +191,20 @@ namespace RocketPod
 
                     bool both = GetsBothFamilies(name, wm);
 
+                    string[]? named = NamedMountsFor(name);
+
                     foreach (WeaponMount m in EncyclopediaRegistration.ResolvedMounts)
                     {
                         if (m == null) continue;
 
                         PluginInfo.MountSpec? mountSpec = PluginInfo.SpecFor(m.jsonKey);
                         if (mountSpec == null) continue;
-                        if (!both && mountSpec.Value.HexFamily) continue;
+
+                        if (named != null)
+                        {
+                            if (System.Array.IndexOf(named, m.jsonKey) < 0) continue;
+                        }
+                        else if (!both && mountSpec.Value.HexFamily) continue;
 
                         if (s.weaponOptions.Contains(m)) { alreadyThere++; continue; }
 
@@ -190,23 +217,55 @@ namespace RocketPod
                 }
             }
 
-            if (attached > 0 || alreadyThere > 0)
-                Plugin.Log.LogInfo(
-                    $"[Tenpin] ExtraHardpoints: {attached} set(s) attached" +
-                    (alreadyThere > 0 ? $", {alreadyThere} already had it" : "") + ".");
+            _totalAttached += attached;
 
             if (attached > 0)
+            {
                 Plugin.Log.LogInfo(
-                    "[Tenpin] The bracketed name above each set is the config key; the quoted " +
-                    "name and code beside it are the aircraft's own. Use those to confirm the " +
-                    "pod landed on the airframes you meant, then narrow ExtraHardpoints - the " +
-                    "defaults are deliberately wide because the key-to-aircraft mapping was " +
-                    "guessed once and got the Vagrant wrong.");
+                    $"[Tenpin] ExtraHardpoints: {_totalAttached} set(s) attached" +
+                    (_passes > 1 ? $" (pass {_passes})" : "") + ".");
 
-            if (missing.Count > 0)
+                if (!_explained)
+                {
+                    _explained = true;
+
+                    Plugin.Log.LogInfo(
+                        "[Tenpin] The bracketed name is the config key; the quoted name " +
+                        "is the aircraft's own.");
+                }
+            }
+
+            _missing = missing;
+            Complete = missing.Count == 0;
+
+            if (Complete)
+            {
+                if (!_reportedComplete)
+                {
+                    _reportedComplete = true;
+                    if (_passes > 1)
+                        Plugin.Log.LogInfo(
+                            $"[Tenpin] ExtraHardpoints: all aircraft found after {_passes} passes.");
+                }
+            }
+            else if (!_reportedMissing && _passes >= MissingReportPass)
+            {
+                _reportedMissing = true;
                 Plugin.Log.LogInfo(
                     "[Tenpin] ExtraHardpoints: not installed, skipped: " +
                     string.Join(", ", missing.ToArray()) + ".");
+            }
         }
+
+        private static int _passes;
+
+        private static int _totalAttached;
+
+        private static bool _explained;
+
+        private static bool _reportedComplete;
+        private static bool _reportedMissing;
+
+        private const int MissingReportPass = 45;
     }
 }

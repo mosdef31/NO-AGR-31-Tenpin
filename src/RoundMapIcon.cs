@@ -35,10 +35,12 @@ namespace RocketPod
                     _surveyed++;
                     Plugin.Log.LogInfo(
                         $"[Tenpin] Map icon survey {_surveyed}/{SurveyLines}: " +
-                        $"unit '{unit.unitName}', definition '{unit.definition.unitName}', " +
-                        $"sprite '{unit.definition.mapIcon?.name ?? "NULL"}', " +
-                        $"mapIconSize {unit.definition.mapIconSize:0.##}, " +
+                        $"unit '{unit.unitName}', def '{unit.definition.unitName}', " +
                         $"ours={(PluginInfo.IsOurUnitName(unit.definition.unitName))}");
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] Map icon survey {_surveyed}: " +
+                        $"sprite '{unit.definition.mapIcon?.name ?? "NULL"}', " +
+                        $"size {unit.definition.mapIconSize:0.##}");
                 }
 
                 PluginInfo.WeaponSpec? spec =
@@ -53,13 +55,14 @@ namespace RocketPod
                 {
                     _logged = true;
                     Sprite? had = unit.definition.mapIcon;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Round map icon: the definition had " +
-                        (had == null ? "NO sprite, which Unity draws as a filled white square"
-                                     : $"sprite '{had.name}'") +
-                        $" at mapIconSize {unit.definition.mapIconSize:0.##}, mapOrient " +
-                        $"{unit.definition.mapOrient}. Replaced with a generated dart at " +
-                        $"{IconSize}, oriented to the round's heading. Logged once.");
+                        $"[Tenpin] Map icon: the definition had " +
+                        (had == null ? "NO sprite" : $"sprite '{had.name}'") +
+                        $" at size {unit.definition.mapIconSize:0.##}.");
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] Replaced with a generated dart at {IconSize}, " +
+                        "oriented to the round's heading.");
                 }
 
                 unit.definition.mapIcon = dart;

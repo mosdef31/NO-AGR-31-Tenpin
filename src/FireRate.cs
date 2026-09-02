@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 
@@ -7,19 +8,21 @@ namespace RocketPod
 
     internal static class FireRate
     {
-
-        internal const float Interval = 0.08f;
-
         private static readonly FieldInfo? _fInterval =
             AccessTools.Field(typeof(MissileLauncher), "fireInterval");
 
-        private static bool _logged;
+        private static readonly HashSet<string> _logged = new HashSet<string>();
+
+        private static bool _warnedNoField;
 
         internal static void Apply(WeaponMount? mount)
         {
             try
             {
                 if (mount == null || mount.prefab == null) return;
+
+                float interval = PluginInfo.RippleIntervalFor(mount.jsonKey);
+                if (interval <= 0f) return;
 
                 var launcher = mount.prefab.GetComponentInChildren<MissileLauncher>();
                 if (launcher == null) return;
@@ -29,31 +32,31 @@ namespace RocketPod
                 if (_fInterval == null)
                 {
 
-                    Plugin.Log.LogWarning(
-                        "[Tenpin] Could not find MissileLauncher.fireInterval by reflection, so the " +
-                        "launcher keeps the bundle's authored interval and the slower of the two " +
-                        "figures wins. Re-check the decompile.");
+                    if (!_warnedNoField)
+                    {
+                        _warnedNoField = true;
+                        Plugin.Log.LogWarning(
+                            "[Tenpin] MissileLauncher.fireInterval not found, so pods keep the " +
+                            "bundle's ripple rate.");
+                    }
                 }
-                else if (!Mathf_Approximately(before, Interval))
+                else if (!Mathf_Approximately(before, interval))
                 {
-                    _fInterval.SetValue(launcher, Interval);
+                    _fInterval.SetValue(launcher, interval);
                 }
 
                 float infoBefore = mount.info != null ? mount.info.fireInterval : float.NaN;
-                if (mount.info != null && !Mathf_Approximately(infoBefore, Interval))
+                if (mount.info != null && !Mathf_Approximately(infoBefore, interval))
                 {
-                    mount.info.fireInterval = Interval;
+                    mount.info.fireInterval = interval;
                 }
 
-                if (!_logged)
+                if (_logged.Add(mount.jsonKey ?? string.Empty))
                 {
-                    _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Ripple interval set to {Interval:0.###} s on both " +
-                        $"MissileLauncher.fireInterval (was {before:0.###}) and " +
-                        $"WeaponInfo.fireInterval (was {infoBefore:0.###}). Both must match: " +
-                        "WeaponStation.Ready() gates on the WeaponInfo one and MissileLauncher.Fire " +
-                        "on its own, so the slower silently wins. Logged once.");
+                        $"[Tenpin] '{mount.jsonKey}' ripple {interval:0.###} s " +
+                        $"(was {before:0.###} launcher, {infoBefore:0.###} info).");
                 }
             }
             catch (Exception ex)

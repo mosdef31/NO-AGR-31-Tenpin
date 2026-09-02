@@ -55,13 +55,10 @@ namespace RocketPod
                 if (!_loggedMissing)
                 {
                     _loggedMissing = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] No visible round meshes on the mounted prefab (looked for a child " +
-                        $"named '{containerName}', then for children named '{prefix}*'), so firing will " +
-                        "not empty the tubes. This is an AUTHORING gap, not an error - the mounted " +
-                        "prefab ships with launch transforms only. See UNITY-SETUP.md step 11b. " +
-                        "Note the rounds must NOT be parented under Tube0..6: MissileLauncher.OnEnable " +
-                        "deactivates every launch transform, which would hide them permanently.");
+                        $"[Tenpin] No round meshes on the prefab ('{containerName}', " +
+                        $"'{prefix}*'), so the tubes will not empty.");
                 }
                 return false;
             }
@@ -70,10 +67,10 @@ namespace RocketPod
             if (full != _rounds.Count && !_loggedMismatch)
             {
                 _loggedMismatch = true;
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin] Pod has {_rounds.Count} visible round mesh(es) but {full} rounds of " +
-                    "ammo. The tubes will empty out of step with the ammo count. Author one mesh per " +
-                    "tube, or set the launcher's Ammo to match.");
+                    $"[Tenpin] Pod has {_rounds.Count} round mesh(es) but {full} ammo, " +
+                    "so the tubes empty out of step.");
             }
 
             Apply(force: true);

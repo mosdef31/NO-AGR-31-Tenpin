@@ -59,12 +59,10 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Rounds now register as an attack on what they are aimed at - " +
-                        $"this one on '{nearest.unitName}'. An unguided round with no target unit " +
-                        "increments nothing, so every AI in the game treated a salvo of eighteen " +
-                        "rockets as though nothing had been fired. Guidance is untouched. " +
-                        "Logged once.");
+                        $"[Tenpin] Rounds now register as an attack, this one on " +
+                        $"'{nearest.unitName}'.");
                 }
             }
         }

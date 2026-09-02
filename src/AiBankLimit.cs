@@ -42,11 +42,10 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Bank limited to {Plugin.AiMaxBankDegrees.Value:0} deg while an AI " +
-                        "has the pod selected. The stock combat state allows 180, which is right for " +
-                        "a weapon that steers itself and wrong for one that leaves along the nose - " +
-                        "a rolling aircraft cannot fire an unguided salvo at anything. Logged once.");
+                        $"[Tenpin] Bank limited to {Plugin.AiMaxBankDegrees.Value:0} deg " +
+                        "while an AI has the pod selected.");
                 }
             }
             catch (Exception ex)

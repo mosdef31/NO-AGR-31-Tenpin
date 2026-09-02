@@ -39,8 +39,7 @@ namespace RocketPod
             Plugin.Log.LogInfo(
                 fail.Count == 0
                     ? $"[Tenpin] Asset check passed, {ok.Count} checks."
-                    : $"[Tenpin] Asset check found {fail.Count} problem(s). The pod will not behave " +
-                      "correctly until they are fixed in Unity and the bundle re-exported.");
+                    : $"[Tenpin] Asset check found {fail.Count} problem(s), to fix in Unity.");
         }
 
         private const string BaseMap = "_BaseMap";

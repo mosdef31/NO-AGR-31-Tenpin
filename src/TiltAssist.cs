@@ -152,12 +152,10 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Tilt assist engaged, flying the elevation at up to {authority:P0} " +
-                        "of the pitch axis. Your own input is added on top and is not capped. It " +
-                        "stands down when the nose is more than " +
-                        $"{BearingGateDegrees:F0} degrees off the target, when the map is open, or " +
-                        "when there is no designation. Logged once.");
+                        $"[Tenpin] Tilt assist engaged, flying elevation at up to " +
+                        $"{authority:P0} of the pitch axis.");
                 }
             }
             catch (Exception ex)

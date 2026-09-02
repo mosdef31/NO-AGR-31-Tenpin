@@ -88,9 +88,7 @@ namespace RocketPod
 
             Plugin.Log.LogInfo(
                 $"[Tenpin/net] {owner.name}: IsServer={owner.IsServer} " +
-                $"HasAuthority={owner.HasAuthority} LocalSim={owner.LocalSim} - {role}. " +
-                "Rounds spawn on IsServer and nothing else; the other two are diagnostic. " +
-                "Logged once per aircraft.");
+                $"HasAuthority={owner.HasAuthority} LocalSim={owner.LocalSim} - {role}.");
         }
 
         internal static void CommandSent()
@@ -108,11 +106,10 @@ namespace RocketPod
                 _peakCommandsPerSecond = _commandSends.Count;
 
             if (_commandSends.Count > 15 && Verbose)
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin/net] {_commandSends.Count} launch commands in the last second, " +
-                    "against a limiter that refills 15 a second with a 45 burst " +
-                    "(Aircraft.cs:2835). Commands past the bucket are dropped SILENTLY - " +
-                    "the server never sees them and nothing reports an error.");
+                    $"[Tenpin/net] {_commandSends.Count} launch commands in a second, " +
+                    "against a limiter refilling 15.");
         }
 
         internal static void RoundLeft(TenpinLauncher pod, WeaponStation station,
@@ -151,14 +148,13 @@ namespace RocketPod
             float ownerSpeed = owner != null && owner.rb != null ? owner.rb.velocity.magnitude : -1f;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin/shot] First round of the session left at {total.magnitude:0.#} m/s: " +
-                $"inherited {inherited.magnitude:0.#} m/s from the aircraft plus the tube's " +
-                $"ejection vector. Aircraft rb.velocity reads {ownerSpeed:0.#} m/s " +
-                $"(owner '{(owner != null ? owner.unitName : "null")}', " +
+                $"[Tenpin/shot] First round left at {total.magnitude:0.#} m/s, " +
+                $"inherited {inherited.magnitude:0.#} m/s.");
+            Plugin.Log.LogInfo(
+                $"[Tenpin/shot] rb.velocity {ownerSpeed:0.#} m/s, owner " +
+                $"'{(owner != null ? owner.unitName : "null")}', " +
                 $"IsServer={(owner != null && owner.IsServer)}, " +
-                $"HasAuthority={(owner != null && owner.HasAuthority)}). If the inherited figure " +
-                "is near zero while the aircraft was moving, that is the multiplayer " +
-                "no-launch-velocity report.");
+                $"HasAuthority={(owner != null && owner.HasAuthority)}.");
         }
 
         internal static void SpawnResult(TenpinLauncher pod, Missile? spawned)
@@ -167,11 +163,10 @@ namespace RocketPod
             if (spawned == null)
             {
                 row.RoundsNull++;
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin/shot] {row.Label}: Spawner.SpawnMissile returned NULL. " +
-                    "The tube flash and the ammo both happened and no round exists. " +
-                    "This is the 'puff of smoke, no projectile' report, and it was " +
-                    "invisible to every earlier trace because the return value was discarded.");
+                    $"[Tenpin/shot] {row.Label}: SpawnMissile returned NULL, so no round " +
+                    "exists.");
                 return;
             }
             row.RoundsSpawned++;
@@ -184,11 +179,10 @@ namespace RocketPod
 
             row.RoundsDiedEarly++;
             if (row.RoundsDiedEarly == 1)
+
                 Plugin.Log.LogWarning(
-                    $"[Tenpin/shot] {row.Label}: a round existed at spawn and was GONE one second " +
-                    "later. That is not a spawn failure and not a network failure - look for a " +
-                    "collision at the pylon, a zero-lifetime fuse, or the round being culled as " +
-                    "an unreplicated object. Logged once per pod.");
+                    $"[Tenpin/shot] {row.Label}: the round existed at spawn and was gone " +
+                    "a second later.");
         }
 
         internal static void TubeUsed(TenpinLauncher pod, int tubeIndex)
@@ -233,11 +227,10 @@ namespace RocketPod
             {
                 _worstAmmoDivergence = divergence;
                 if (divergence > 1)
+
                     Plugin.Log.LogWarning(
-                        $"[Tenpin/net] Ammo divergence {divergence}: this machine says {localAmmo}, " +
-                        $"the server says {serverAmmo}. Rounds have left the pod here that do not " +
-                        "exist there, which is what an observer sees as tubes emptying with " +
-                        "nothing in the air.");
+                        $"[Tenpin/net] Ammo divergence {divergence}: here {localAmmo}, " +
+                        $"server {serverAmmo}.");
             }
         }
 

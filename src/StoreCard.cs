@@ -43,8 +43,7 @@ namespace RocketPod
             catch (Exception ex)
             {
                 Plugin.Log.LogError(
-                    "[Tenpin] Could not restore weaponPrefab after Initialize, so the loadout " +
-                    $"store card will read empty this session: {ex}");
+                    $"[Tenpin] weaponPrefab not restored, so the store card reads empty: {ex}");
             }
         }
     }
@@ -80,11 +79,10 @@ namespace RocketPod
                 }
                 else if (Plugin.StoreCardFields.Value && round != null && !_logged.Contains(key))
                 {
+
                     Plugin.Log.LogWarning(
-                        "[Tenpin] The round prefab has no MissileSeeker or no Missile component, " +
-                        "so weaponPrefab is being left null and the loadout card stays empty. " +
-                        "AircraftSelectionMenu dereferences both without a null check, and a " +
-                        "throw inside the loadout screen is worse than a blank card.");
+                        "[Tenpin] The round prefab has no MissileSeeker or Missile, so the " +
+                        "store card stays empty.");
                 }
 
                 float cost = Mathf.Max(0f, Plugin.RoundCostMillions.Value);
@@ -109,13 +107,12 @@ namespace RocketPod
                         MissileSeeker? s = round.GetComponent<MissileSeeker>();
                         if (s != null) seeker = s.GetSeekerType();
                     }
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] {key}: store card wired - seeker '{seeker}', price " +
-                        $"${cost * 1000f:0.#}k a round (${cost * 1000f * mount.ammo:0.#}k " +
-                        $"a pod of {mount.ammo}), damageTolerance {tolerance:0.##}. The card's seeker, AP, HE, " +
-                        "RCS and price all read off WeaponInfo.weaponPrefab, which this pod " +
-                        "authors null so that WeaponMount.Initialize does not collapse it to " +
-                        "ammo 1. Logged once per session.");
+                        $"[Tenpin] {key}: store card wired - seeker '{seeker}', " +
+                        $"${cost * 1000f:0.#}k a round, tolerance {tolerance:0.##}.");
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] {key}: ${cost * 1000f * mount.ammo:0.#}k a pod of {mount.ammo}.");
                 }
             }
             catch (Exception ex)

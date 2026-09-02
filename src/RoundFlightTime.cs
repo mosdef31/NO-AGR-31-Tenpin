@@ -39,12 +39,10 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Seeker flight-time correction active. First round: the seeker " +
-                        $"estimated {timeToTarget:0.0} s from horizontal closure, the solver " +
-                        $"predicted {corrected:0.0} s. The seeker's own estimate collapses in a " +
-                        "dive and aims the round high by half g t squared, which is what made " +
-                        "close shots pitch up and fly away. Logged once per session.");
+                        $"[Tenpin] Flight-time correction active. Seeker said " +
+                        $"{timeToTarget:0.0} s, the solver {corrected:0.0} s.");
                 }
 
                 timeToTarget = Mathf.Max(0f, corrected);
@@ -74,11 +72,9 @@ namespace RocketPod
                 if (!_terminalLogged)
                 {
                     _terminalLogged = true;
+
                     Plugin.Log.LogInfo(
-                        "[Tenpin] A round ran its flight time out and stopped steering. Past " +
-                        "that point the aimpoint is pinned along its own velocity, so it flies " +
-                        "on ballistically instead of turning back toward a target it has " +
-                        "already passed. Logged once per session.");
+                        "[Tenpin] A round ran its flight time out and stopped steering.");
                 }
 
                 __result = missile.GlobalPosition() + v;

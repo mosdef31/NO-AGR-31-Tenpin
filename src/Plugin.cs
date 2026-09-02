@@ -39,6 +39,8 @@ namespace RocketPod
         public static ConfigEntry<bool> HudMapMarker { get; private set; } = null!;
         public static ConfigEntry<float> HudNoseAimBelowKph { get; private set; } = null!;
         public static ConfigEntry<bool> HudTerrainCheck { get; private set; } = null!;
+
+        public static ConfigEntry<bool> HudLostTrackLead { get; private set; } = null!;
         public static ConfigEntry<bool> HudHideWithGear { get; private set; } = null!;
         public static ConfigEntry<bool> HudCockpitOnly { get; private set; } = null!;
 
@@ -51,6 +53,10 @@ namespace RocketPod
         public static ConfigEntry<float> TiltAssistAuthority { get; private set; } = null!;
 
         public static ConfigEntry<bool> SillyEffectsEnabled { get; private set; } = null!;
+
+        public static ConfigEntry<bool> RealisticPlume { get; private set; } = null!;
+
+        public static ConfigEntry<float> NozzleFireSeconds { get; private set; } = null!;
 
         public static ConfigEntry<float> StrikeFinHold { get; private set; } = null!;
         public static ConfigEntry<float> StrikeFinSweep { get; private set; } = null!;
@@ -136,7 +142,8 @@ namespace RocketPod
 
         public static Settled<string> ExtraHardpoints { get; } =
             Fixed("AttackHelo1:2,3,4; UtilityHelo1:0,1; trainer:1,2; VTOLTrainer1:3,4; " +
-                  "MiG-15:2; COIN:2,3; CAS1:2,3,4,5,6,7; RAH-72:0,1,2,3; F-16M:1,2,3,4; Shrike:2,3");
+                  "MiG-15:2; COIN:2,3; CAS1:2,3,4,5,6,7; RAH-72:0,1,2,3; F-16M:1,2,3,4; " +
+                  "Shrike:2,3; Aryx_PropAttacker1:2,3,4,5");
 
         public static Settled<bool> UseStockEffects { get; } = Fixed(true);
 
@@ -162,23 +169,13 @@ namespace RocketPod
 
         public static Settled<float> GlowSizeScale { get; } = Fixed(0.55f);
 
+        public static Settled<bool> NozzleGlow { get; } = Fixed(false);
+
         public static Settled<bool> AiEmployment { get; } = Fixed(true);
 
         public static Settled<float> AiSalvoEconomyRange { get; } = Fixed(5000f);
 
-        public static Settled<float> AiFullSalvoRange { get; } = Fixed(17000f);
-
-        public static Settled<float> AiSalvoNear { get; } = Fixed(12f);
-
-        public static Settled<float> AiSalvoFar { get; } = Fixed(18f);
-
-        public static Settled<float> AiOverwhelmFactor { get; } = Fixed(2.0f);
-
-        public static Settled<float> AiPreferredMinRange { get; } = Fixed(8000f);
-
         public static Settled<float> AiEgressSeconds { get; } = Fixed(25f);
-
-        public static Settled<int> AiTargetsPerPass { get; } = Fixed(3);
 
         public static Settled<string> AiHexAircraft { get; } = Fixed("CI-22");
 
@@ -206,13 +203,9 @@ namespace RocketPod
 
         public static Settled<float> AiCrossingCeiling { get; } = Fixed(2.5f);
 
-        public static Settled<int> AiBurstsPerApproach { get; } = Fixed(3);
-
         public static Settled<float> AiLoiterSeconds { get; } = Fixed(14f);
 
         public static Settled<float> AiPassSeconds { get; } = Fixed(75f);
-
-        public static Settled<float> AiBurstSeconds { get; } = Fixed(2.5f);
 
         public static Settled<float> AiAbortRange { get; } = Fixed(2000f);
 
@@ -406,10 +399,10 @@ namespace RocketPod
                 {
                     using System.IO.Stream? bundle = typeof(Plugin).Assembly
                         .GetManifestResourceStream(PluginInfo.BundleName);
+
                     Log.LogInfo(bundle == null
-                        ? "[RocketPod] No embedded bundle in this DLL, which is a packaging fault."
-                        : $"[RocketPod] Embedded bundle: {bundle.Length:N0} bytes. If a Unity " +
-                          "re-export is not showing up in game, check this number changed.");
+                        ? "[RocketPod] No embedded bundle in this DLL."
+                        : $"[RocketPod] Embedded bundle: {bundle.Length:N0} bytes.");
                 }
                 catch (Exception ex)
                 {
@@ -473,11 +466,9 @@ namespace RocketPod
                 }
 
                 orphans.Sort();
-                Log.LogInfo($"[RocketPod] Patch audit: {orphans.Count} [HarmonyPatch] class(es) were NOT " +
-                     $"registered this session - {string.Join(", ", orphans.ToArray())}. Some are " +
-                     "config-gated and belong here; one that is not is a patch doing nothing at " +
-                     "all, which is what happened to the map icons, the ride heights and the " +
-                     "mount-name repair.");
+
+                Log.LogInfo($"[RocketPod] Patch audit: {orphans.Count} class(es) not " +
+                     $"registered - {string.Join(", ", orphans.ToArray())}.");
             }
             catch (Exception ex)
             {
@@ -576,6 +567,15 @@ namespace RocketPod
                     null,
                     new ConfigurationManagerAttributes { Order = 43 }));
 
+            HudLostTrackLead = Config.Bind(
+                "HUD", "LostTrackLead", true,
+                new ConfigDescription(
+                    "When the lock drops, keep the aim point moving on the target's " +
+                    "last known velocity instead of dropping back to the aircraft's " +
+                    "own impact point. The cue is drawn dashed while it is coasting.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 42 }));
+
             HudHideWithGear = Config.Bind(
                 "HUD", "HideWithGear", true,
                 new ConfigDescription(
@@ -644,6 +644,24 @@ namespace RocketPod
                     null,
 
                     new ConfigurationManagerAttributes { IsAdvanced = true, Order = 99 }));
+
+            RealisticPlume = Config.Bind(
+                "Effects", "Realistic plume", true,
+                new ConfigDescription(
+                    "Show a short exhaust jet and heat haze instead of a flame, and " +
+                    "a continuous smoke trail instead of separate puffs. Turn off if " +
+                    "large salvos cost frames.",
+                    null,
+                    new ConfigurationManagerAttributes { Order = 98 }));
+
+            NozzleFireSeconds = Config.Bind(
+                "Effects", "Nozzle fire seconds", 0.2f,
+                new ConfigDescription(
+                    "How long the exhaust fire keeps burning after launch, in seconds. " +
+                    "The smoke trail and the heat haze are not affected and run for the " +
+                    "whole motor burn. 0 leaves the fire burning the whole way.",
+                    new AcceptableValueRange<float>(0f, 6f),
+                    new ConfigurationManagerAttributes { Order = 97 }));
 
             SillyEffectsEnabled = Config.Bind(
                 "Effects", "Silly effects", false,
@@ -779,7 +797,20 @@ namespace RocketPod
 
         private void Update()
         {
-            if (_attempts > 30) { enabled = false; return; }
+
+            if (_attempts > 120)
+            {
+
+                if (EncyclopediaRegistration.ResolvedMounts.Count > 0)
+                    Plugin.Log.LogInfo(
+                        "[Tenpin] Startup finished. Aircraft still absent are not installed.");
+                else
+                    Plugin.Log.LogError(
+                        "[Tenpin] Gave up after four minutes; the bundle never loaded.");
+
+                enabled = false;
+                return;
+            }
             if (Time.unscaledTime < _next) return;
             _next = Time.unscaledTime + 2f;
             _attempts++;
@@ -817,6 +848,9 @@ namespace RocketPod
             {
                 Plugin.Log.LogError($"[Tenpin] Asset check runner failed: {ex.Message}");
             }
+
+            if (!ExtraHardpoints.Complete) return;
+
             enabled = false;
         }
     }

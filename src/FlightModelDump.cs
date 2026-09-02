@@ -70,12 +70,10 @@ namespace RocketPod
                 if (rows.Count == 0) return;
 
                 Plugin.Log.LogInfo(
-                    "[Tenpin] -- Flight models, stock rounds vs ours. Copy from a comparable " +
-                    "round rather than inventing values. --");
+                    "[Tenpin] -- Flight models, stock rounds vs ours. --");
+
                 Plugin.Log.LogInfo(
-                    "[Tenpin]   dragPerMass = Cd0 * finArea / mass, which is what actually sets " +
-                    "how fast a round bleeds speed. A lighter, smaller round should sit ABOVE the " +
-                    "heavy ones here, not below.");
+                    "[Tenpin]   dragPerMass = Cd0 * finArea / mass, which sets speed bleed.");
 
                 foreach (Row r in rows.OrderByDescending(r => r.DragPerMass).Take(24))
                     Plugin.Log.LogInfo(Format(r));
@@ -90,10 +88,12 @@ namespace RocketPod
                     float median = rows.OrderBy(r => r.DragPerMass)
                                        .ElementAt(rows.Count / 2).DragPerMass;
                     Plugin.Log.LogInfo(
-                        $"[Tenpin]   Stock median dragPerMass is {median:0.000e+0}; ours is " +
-                        $"{ours.Value.DragPerMass:0.000e+0}. At our finArea " +
-                        $"{ours.Value.FinArea:0.###} m2 and mass {ours.Value.Mass:0.#} kg, matching " +
-                        $"that median needs Cd0 = {(ours.Value.FinArea > 0f && ours.Value.Mass > 0f ? median * ours.Value.Mass / ours.Value.FinArea : 0f):0.###}.");
+                        $"[Tenpin]   Stock median dragPerMass {median:0.000e+0}, ours " +
+                        $"{ours.Value.DragPerMass:0.000e+0}.");
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin]   At finArea {ours.Value.FinArea:0.###} m2 and mass " +
+                        $"{ours.Value.Mass:0.#} kg, that median needs Cd0 = " +
+                        $"{(ours.Value.FinArea > 0f && ours.Value.Mass > 0f ? median * ours.Value.Mass / ours.Value.FinArea : 0f):0.###}.");
                 }
             }
             catch (Exception ex)
@@ -144,11 +144,12 @@ namespace RocketPod
             {
                 Keyframe k = curve[i];
                 Plugin.Log.LogInfo(
-                    $"[Tenpin]       key{i}: time={k.time:0.#####} ({k.time * Mathf.Rad2Deg:0.##} deg) " +
-                    $"value={k.value:0.#####} inTangent={k.inTangent:0.#####} " +
-                    $"outTangent={k.outTangent:0.#####} " +
-                    $"inWeight={k.inWeight:0.###} outWeight={k.outWeight:0.###} " +
-                    $"weightedMode={k.weightedMode}");
+                    $"[Tenpin]       key{i}: time={k.time:0.#####} " +
+                    $"({k.time * Mathf.Rad2Deg:0.##} deg) value={k.value:0.#####}");
+                Plugin.Log.LogInfo(
+                    $"[Tenpin]       key{i}: in={k.inTangent:0.#####} " +
+                    $"out={k.outTangent:0.#####} inW={k.inWeight:0.###} " +
+                    $"outW={k.outWeight:0.###} mode={k.weightedMode}");
             }
         }
 

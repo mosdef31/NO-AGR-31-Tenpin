@@ -56,9 +56,8 @@ namespace RocketPod
             float max = TrajectorySolver.MaxRange(spec, position, heading, speed, groundY: 0f);
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] -- Range readout: {max / 1000f:0.00} km at the reference condition " +
-                $"({alt:0} m, {speed:0} m/s), best of an elevation sweep to 70 deg. " +
-                "No flight needed: change the motor in Unity, re-export, read this line.");
+                $"[Tenpin] -- Range readout: {max / 1000f:0.00} km at {alt:0} m, " +
+                $"{speed:0} m/s, best of a sweep to 70 deg. --");
 
             Plugin.Log.LogInfo("[Tenpin]    across launch speed, at the same altitude:");
             foreach (float v in new[] { 140f, 170f, 220f, 280f, 340f })
@@ -144,15 +143,14 @@ namespace RocketPod
             if (Mathf.Abs(bestScale - 1f) < 0.001f)
             {
                 Plugin.Log.LogInfo(
-                    $"[Tenpin]    motor solve: the current motor is already the closest to " +
-                    $"{targetKm:0.#} km of anything in the sweep. Leave it alone.");
+                    $"[Tenpin]    motor solve: nothing in the sweep beats the current " +
+                    $"motor at {targetKm:0.#} km.");
                 return;
             }
 
             Plugin.Log.LogInfo(
-                $"[Tenpin]    motor solve: scale total impulse to {bestScale:0.00}x for " +
-                $"{bestRange / 1000f:0.00} km, against a band midpoint of {targetKm:0.#} km. " +
-                "Set these on Tenpin_Rocket in Unity:");
+                $"[Tenpin]    motor solve: scale impulse to {bestScale:0.00}x for " +
+                $"{bestRange / 1000f:0.00} km, band midpoint {targetKm:0.#} km.");
             for (int i = 0; i < spec.Motors.Length; i++)
             {
                 TrajectorySolver.MotorStage m = spec.Motors[i];
@@ -189,14 +187,11 @@ namespace RocketPod
             if (rows.Count == 0) return;
 
             Plugin.Log.LogInfo(
-                "[Tenpin] -- Damage, stock rounds vs ours, by yield. Mass is alongside because a " +
-                "yield reasonable on a 600 kg anti-ship missile is not reasonable on a 25 kg " +
-                "rocket. --");
+                "[Tenpin] -- Damage, stock rounds vs ours, by yield and mass. --");
+
             Plugin.Log.LogInfo(
-                "[Tenpin]    HARD CEILING: keep blastYield under 200 while warhead effects are " +
-                "borrowed. Above it Missile+Warhead.Detonate calls GetComponentInChildren<Shockwave>() " +
-                "with no null check, and a borrowed AGR-18 effect has none - the whole detonation " +
-                "aborts and does NOTHING, which reads as far worse than a weak warhead.");
+                "[Tenpin]    HARD CEILING: keep blastYield under 200 while effects " +
+                "are borrowed.");
 
             foreach (var r in rows.OrderByDescending(r => r.Blast).Take(26))
                 Plugin.Log.LogInfo(Line(r));

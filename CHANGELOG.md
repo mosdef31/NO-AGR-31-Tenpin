@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.2.3
+
+- **The heat haze is visible.** The shimmer behind a burning motor was capped so
+  low that it only ever covered a short stub at the tail. It now reaches a few
+  hundred metres back and holds its strength before it dissipates.
+- **Smoke hangs around longer.** The column reaches further behind the round, at
+  the same thin opacity.
+- **A new Strike rocket, with a new fin deployment.** The AGR-51's round and its four
+  blades are re-modelled. The fins now open to 45 degrees rather than 90, so the
+  deployed span is about half what it was while the blade itself is bigger.
+- **The exhaust fire goes out shortly after launch.** It used to burn for the whole
+  motor run. The smoke trail and the heat shimmer are unaffected and still run to
+  burnout. How long the fire lasts is under Effects if you want a different look.
+- **The heat shimmer is a stream instead of a string of puffs.** It was emitted on a
+  timer, so at rocket speeds it left a gap of about thirteen metres between one puff
+  and the next. It is spaced by distance now, sits at the width of the rocket's own
+  body rather than sprawling a metre wide, and opens out and fades behind the round
+  instead of hanging in the air.
+
+- **The Strike pod fires one rocket at a time.** A tap of the trigger now sends a single
+  AGR-51 instead of two or three, and holding the trigger walks the four rounds out over
+  about a second. The AGR-31 pods are unchanged and still ripple as fast as they did.
+- **A shorter log.** Every message the mod writes is now a single readable line. The
+  reasoning behind each one moved into the code, where it belongs.
+- **The rockets leave a proper trail.** The smoke was a line of separate blobs because
+  the game emits one trail particle every thirty metres of flight. It is now a
+  continuous column of smaller particles, and it thins itself out automatically when a
+  lot of rounds are in the air.
+- **A hot exhaust instead of a flame.** A round under power now shows a short jet at the
+  nozzle and distorts the air behind it, the way the aircraft engines do, rather than
+  trailing a flame. Turn it off under Effects if large salvos cost you frames.
+- **The AI flies each rocket the way that rocket is meant to be flown.** It used to
+  treat both as the AGR-31, so it would run a four round Strike pod in to eight
+  kilometres and empty it at one truck. The Strike is now used as the standoff weapon
+  it is: it stays further out, waits for a better aiming solution before it shoots, and
+  sends one or two rounds at a time instead of a salvo. It will also now attack a single
+  moving vehicle, which it refused to do before. The AGR-31 is unchanged.
+
+## 1.2.2 - 2026-09-01
+
+- **The OA-27 Cavalier can carry the pods.** The AGR-51 Strike and the seven shot AGR-31
+  are now offered on its inner and outer wing pylons. The larger 18 and 19 shot pods are
+  not; they are too much pod for the aircraft.
+- **The pods reach modded aircraft again.** On some launches they were offered only on the
+  stock aircraft, and every modded one was missed. The mod was checking for those aircraft
+  before the mods that add them had finished loading, so whether it worked came down to
+  which finished first. It now keeps looking until they are all there.
+
+## 1.2.1 - 2026-09-01
+
+- **The pods appear again.** On some installs the weapons never showed up in the loadout
+  list, even though the mod's settings page was there. The mod stopped waiting for
+  Blueprinter after one minute, and on a machine with a lot of mods Blueprinter can take
+  longer than that to finish loading. It now waits four minutes.
+- **Fixed a clash with other mods.** The mod's asset file carried the name Unity gives a
+  new one by default, so any other mod that had left the same default name could push
+  this one out, and whichever lost never loaded at all. It now uses its own name.
+- **A quieter log.** A mod that was still loading normally reported itself as broken over
+  and over. It now reports a problem once, and only when there really is one.
+
 ## 1.2.0 - 2026-08-31
 
 - **A second weapon, the AGR-51 Strike.** A four round pod firing a 133 mm rocket, where

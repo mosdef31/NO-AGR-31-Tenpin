@@ -46,12 +46,10 @@ namespace RocketPod
             if ((_loader == null || _isLoaded == null) && !_warned)
             {
                 _warned = true;
+
                 Plugin.Log.LogWarning(
-                    "[Tenpin] Could not reach Encyclopedia's loader to test whether it is ready, " +
-                    "so early lookups fall back to reading it directly. Harmless, but the game " +
-                    "will log 'Encyclopedia was not preloaded by menu' at error level a few times " +
-                    "during startup, and that error is not a fault in this mod. Re-check " +
-                    "ResourcesAsyncLoader in the decompile if you want the noise gone.");
+                    "[Tenpin] Encyclopedia's loader is unreachable, so early lookups " +
+                    "read it directly.");
             }
 
             return _loader != null && _isLoaded != null;

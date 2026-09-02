@@ -28,11 +28,10 @@ namespace RocketPod
             {
                 UnityEngine.Object.Destroy(ours);
                 _refused++;
+
                 Plugin.Log.LogError(
-                    $"[Tenpin] Launcher swap REFUSED on '{host.name}': the stock MissileLauncher " +
-                    "carried no missile definition or no launch transforms, so there was nothing " +
-                    "to copy. The game's own component is left in place, which means this pod " +
-                    "fires for the HOST ONLY. Check the prefab's MissileLauncher fields in Unity.");
+                    $"[Tenpin] Launcher swap refused on '{host.name}': no missile " +
+                    "definition or no launch transforms.");
                 return;
             }
 
@@ -44,12 +43,9 @@ namespace RocketPod
             _swapped++;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Launcher swap on '{host.name}': MissileLauncher -> TenpinLauncher, " +
+                $"[Tenpin] Launcher swap on '{host.name}': " +
                 $"{ours.launchTransforms.Length} tube(s), ripple {ours.fireInterval:0.###} s, " +
-                $"ammo {ours.ammo}. The stock component gates its spawn on owner.LocalSim, which " +
-                "is the wrong flag on an aircraft and is why the pod never worked for a client; " +
-                "ours gates on IsServer and hands the shot to Aircraft.CmdLaunchMissile the way " +
-                "MountedMissile does.");
+                $"ammo {ours.ammo}.");
         }
 
         private static void ReplaceInStations(MissileLauncher stock, TenpinLauncher ours)
@@ -78,10 +74,8 @@ namespace RocketPod
             _summaryLogged = true;
 
             Plugin.Log.LogInfo(
-                $"[Tenpin] Launcher swap: {_swapped} pod(s) on the native launch path, " +
-                $"{_refused} refused. A client's shot now travels the game's own " +
-                "Aircraft.CmdLaunchMissile as a throttled trigger-hold heartbeat rather than " +
-                "one command per round, which is what the 15/s rate limiter needs.");
+                $"[Tenpin] Launcher swap: {_swapped} pod(s) on the native path, " +
+                $"{_refused} refused.");
         }
     }
 
@@ -104,9 +98,8 @@ namespace RocketPod
             }
 
             Plugin.Log.LogWarning(
-                "[Tenpin] No UserCode_RpcSyncAmmoCount(byte, int) on Unit, so the ammo " +
-                "divergence measurement is off for this game build. Everything else is " +
-                "unaffected. The Mirage weaver renames these per build; see the note above.");
+                "[Tenpin] No UserCode_RpcSyncAmmoCount on Unit, so ammo divergence " +
+                "is not measured.");
             return null;
         }
 

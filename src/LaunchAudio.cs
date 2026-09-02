@@ -46,10 +46,10 @@ namespace RocketPod
             if (!_playedLogged)
             {
                 _playedLogged = true;
+
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Launch report: '{_clip.name}' ({_clip.length:0.##}s) over {Voices} " +
-                    "voices. The prefab authors MissileLauncher.launchSound null, so this fills it; " +
-                    "author a real one in Unity and this stops running. Logged once.");
+                    $"[Tenpin] Launch report: '{_clip.name}' ({_clip.length:0.##}s) " +
+                    $"over {Voices} voices.");
             }
         }
 
@@ -65,9 +65,9 @@ namespace RocketPod
                 _clip = FindClip(out _mixer, out string from);
                 if (_clip == null)
                 {
+
                     Plugin.Log.LogWarning(
-                        "[Tenpin] No stock AudioClip could be borrowed for the launch report, so " +
-                        "the pod fires silently. Author MissileLauncher.launchSound in Unity.");
+                        "[Tenpin] No AudioClip could be borrowed, so the pod fires silently.");
                     return false;
                 }
 
@@ -212,12 +212,9 @@ namespace RocketPod
             if (!_logged)
             {
                 _logged = true;
+
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Impact crack: '{clip.name}' on Missile.nearbyDetonationClip. " +
-                    "There is deliberately NO looping flight sound - the borrowed clip is a " +
-                    "launch report and looping it is the clanking removed on 2026-08-31. " +
-                    "Author a real one in the bundle if the coast should be audible. " +
-                    "Logged once.");
+                    $"[Tenpin] Impact crack: '{clip.name}' on Missile.nearbyDetonationClip.");
             }
         }
     }

@@ -70,10 +70,10 @@ namespace RocketPod
                 if (!_loggedLeadOff)
                 {
                     _loggedLeadOff = true;
+
                     Plugin.Log.LogInfo(
-                        "[Tenpin] LeadLockedAimpoint is off, so a locked round aims at where its " +
-                        "target is at release rather than where it will be. Against anything " +
-                        "moving the salvo lands astern by the target's own travel. Logged once.");
+                        "[Tenpin] LeadLockedAimpoint is off, so a locked round aims where " +
+                        "the target was.");
                 }
                 return target;
             }
@@ -94,13 +94,10 @@ namespace RocketPod
             {
                 _loggedLead = true;
                 float moved = ((Vector3)(leadPoint - target)).magnitude;
+
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Locked aimpoint led by {moved:0} m over a {ballistic.TimeOfFlight:0.0} s " +
-                    $"time of flight ({(routed ? "the target's OWN ROUTE" : "extrapolated heading")}), " +
-                    $"target '{unit.unitName}' doing {(unit.rb != null ? unit.rb.velocity.magnitude : 0f):0} m/s. " +
-                    "The guidance budget is measured against this point, not against where the " +
-                    "target was at release, so a well-flown lead is no longer charged as aiming " +
-                    "error and spent undoing itself. Logged once per session.");
+                    $"[Tenpin] Locked aimpoint led {moved:0} m over " +
+                    $"{ballistic.TimeOfFlight:0.0} s, target '{unit.unitName}'.");
             }
 
             return leadPoint;
@@ -110,10 +107,6 @@ namespace RocketPod
                                                     TrajectorySolver.Result ballistic)
         {
             if (!Plugin.GuidanceBudget.Value) return target;
-
-            // ── WHOSE ROUND IS THIS ──────────────────────────────────────────
-            //
-            // A player's budget is 5 mrad and stays 5 mrad: it is half of the
 
             float mrad = IsAiShot(missile)
                 ? Plugin.AiGuidanceBudgetMilliradians.Value
@@ -141,15 +134,16 @@ namespace RocketPod
             if (!_loggedBudget)
             {
                 _loggedBudget = true;
+
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Guidance budget active at {mrad:0.##} mrad. First round: the " +
-                    $"ballistic path missed the locked target by {offset.magnitude:0} m at " +
-                    $"{slant:0} m slant, and the round is allowed {budget:0} m of correction, so " +
-                    $"it will land about {offset.magnitude - budget:0} m short of the target. Aim " +
-                    $"better and this goes to zero. Launch speed {launchSpeed:0} m/s gave a " +
-                    $"{relief:0.##}x low-speed relief on the budget (1x at or above " +
-                    $"{LowSpeedLaunch.ReferenceSpeed:0} m/s, so a jet sees none of it). " +
-                    "Logged once per session.");
+                    $"[Tenpin] Guidance budget active at {mrad:0.##} mrad, allowing " +
+                    $"{budget:0} m of correction.");
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] First round missed by {offset.magnitude:0} m at {slant:0} m, " +
+                    $"landing {offset.magnitude - budget:0} m short.");
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] Launch speed {launchSpeed:0} m/s gave {relief:0.##}x " +
+                    "low-speed relief.");
             }
 
             return new GlobalPosition(aimed);
@@ -279,11 +273,10 @@ namespace RocketPod
                 if (!_loggedNoSolver)
                 {
                     _loggedNoSolver = true;
+
                     Plugin.Log.LogWarning(
-                        "[Tenpin] Could not read the round's flight model, so the powered aimpoint " +
-                        "is off and rounds keep the stock free-fall aimpoint - which for a weapon " +
-                        "with a motor lands far short of where it actually flies. Check the " +
-                        "reflection warnings from RoundSpecFactory above this line.");
+                        "[Tenpin] Could not read the round's flight model, so rounds keep " +
+                        "the stock aimpoint.");
                 }
                 return ((Vector3)(knownPos - missile.GlobalPosition())).magnitude;
             }
@@ -311,11 +304,10 @@ namespace RocketPod
                         Vector3 a = result.ImpactPoint;
                         Vector3 b = marched.ImpactPoint;
                         float shift = new Vector2(b.x - a.x, b.z - a.z).magnitude;
+
                         Plugin.Log.LogInfo(
-                            $"[Tenpin] Terrain-marched aimpoint: the ground where the round comes " +
-                            $"down is {b.y:0} m above sea level, which moves the prediction " +
-                            $"{shift:0} m. Without this the pattern lands long of high ground by " +
-                            "roughly elevation over tan(descent angle). Logged once per session.");
+                            $"[Tenpin] Terrain-marched aimpoint: ground at {b.y:0} m ASL " +
+                            $"moves the prediction {shift:0} m.");
                     }
 
                     result = marched;
@@ -341,10 +333,11 @@ namespace RocketPod
                 _loggedApplied = true;
                 float stockRange = ((Vector3)(knownPos - missile.GlobalPosition())).magnitude;
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Powered aimpoint active. First round: stock free-fall aimpoint was " +
-                    $"{stockRange:0} m out, powered prediction is {slantRange:0} m " +
-                    $"(time of flight {result.TimeOfFlight:0.0} s, {result.Steps} steps at " +
-                    $"stepScale {Plugin.AimpointStepScale.Value:0.#}). Logged once per session.");
+                    $"[Tenpin] Powered aimpoint active: stock was {stockRange:0} m out, " +
+                    $"powered is {slantRange:0} m.");
+                Plugin.Log.LogInfo(
+                    $"[Tenpin] Time of flight {result.TimeOfFlight:0.0} s, {result.Steps} " +
+                    $"steps at stepScale {Plugin.AimpointStepScale.Value:0.#}.");
             }
 
             return slantRange;
@@ -366,11 +359,11 @@ namespace RocketPod
                     if (!_loggedBroken)
                     {
                         _loggedBroken = true;
+
                         Plugin.Log.LogWarning(
-                            "[Tenpin] Could not resolve InertialSeekerShell's private fields by " +
-                            "reflection, so both the powered aimpoint and angular dispersion are " +
-                            $"OFF and rounds fly on stock behaviour. Re-check the decompile: " +
-                            $"{SeekerFields.Report}.");
+                            "[Tenpin] InertialSeekerShell fields not found, so rounds fly " +
+                            "on stock behaviour.");
+                        Plugin.Log.LogWarning($"[Tenpin] {SeekerFields.Report}");
                     }
                     return;
                 }

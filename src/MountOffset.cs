@@ -39,14 +39,15 @@ namespace RocketPod
                 if (!_logged)
                 {
                     _logged = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] Mount ride height is per variant, from PluginInfo.Mounts: " +
+                        $"[Tenpin] Mount ride heights, from PluginInfo.Mounts: " +
                         string.Join("; ", Array.ConvertAll(
                             PluginInfo.Mounts,
-                            m => $"{m.Shape} hangs {m.FlushOffset:0.###} m")) +
-                        $". Each is half the pod's own width, so its back sits flush against the " +
-                        $"hardpoint. This spawn was '{weaponMount.jsonKey}' at {y:0.###} m " +
-                        $"(prefab authored {p.y:0.###}). Logged once.");
+                            m => $"{m.Shape} hangs {m.FlushOffset:0.###} m")));
+                    Plugin.Log.LogInfo(
+                        $"[Tenpin] This spawn was '{weaponMount.jsonKey}' at {y:0.###} m " +
+                        $"(prefab authored {p.y:0.###}).");
                 }
             }
             catch (Exception ex)

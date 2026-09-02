@@ -9,7 +9,7 @@ namespace RocketPod
         internal const string GUID = "com.tenpin";
         internal const string Name = "AGR-31 Tenpin";
 
-        internal const string Version = "1.2.0";
+        internal const string Version = "1.2.3";
 
         internal const string MountKey = "AGR31_Tenpin";
         internal const string MountKey19 = "AGR31_Tenpin_19";
@@ -42,20 +42,81 @@ namespace RocketPod
 
             internal readonly float MapMarkAspect;
 
+            internal readonly float RippleInterval;
+
+            internal readonly EmploymentSpec Employment;
+
             internal WeaponSpec(string roundKey, string weaponName, string unitName,
-                                string shortName, bool spins, float mapMarkAspect)
+                                string shortName, bool spins, float mapMarkAspect,
+                                float rippleInterval, EmploymentSpec employment)
             {
                 RoundKey = roundKey; WeaponName = weaponName;
                 UnitName = unitName; ShortName = shortName;
                 Spins = spins; MapMarkAspect = mapMarkAspect;
+                RippleInterval = rippleInterval;
+                Employment = employment;
             }
         }
+
+        internal readonly struct EmploymentSpec
+        {
+
+            internal readonly float SalvoNear;
+            internal readonly float SalvoFar;
+
+            internal readonly int PodCeiling;
+
+            internal readonly float OverwhelmFactor;
+
+            internal readonly float FullSalvoRange;
+
+            internal readonly float PreferredMinRange;
+
+            internal readonly float GuidanceBudgetMilliradians;
+
+            internal readonly float BurstSeconds;
+            internal readonly int BurstsPerApproach;
+
+            internal readonly int TargetsPerPass;
+
+            internal readonly bool Saturation;
+
+            internal EmploymentSpec(float salvoNear, float salvoFar, int podCeiling,
+                                    float overwhelmFactor, float fullSalvoRange,
+                                    float preferredMinRange,
+                                    float guidanceBudgetMilliradians,
+                                    float burstSeconds, int burstsPerApproach,
+                                    int targetsPerPass, bool saturation)
+            {
+                SalvoNear = salvoNear; SalvoFar = salvoFar;
+                PodCeiling = podCeiling; OverwhelmFactor = overwhelmFactor;
+                FullSalvoRange = fullSalvoRange;
+                PreferredMinRange = preferredMinRange;
+                GuidanceBudgetMilliradians = guidanceBudgetMilliradians;
+                BurstSeconds = burstSeconds; BurstsPerApproach = burstsPerApproach;
+                TargetsPerPass = targetsPerPass; Saturation = saturation;
+            }
+        }
+
+        private static readonly EmploymentSpec Employment31 = new EmploymentSpec(
+            salvoNear: 12f, salvoFar: 18f, podCeiling: Rounds18,
+            overwhelmFactor: 2.0f, fullSalvoRange: 17000f,
+            preferredMinRange: 8000f, guidanceBudgetMilliradians: 45f,
+            burstSeconds: 2.5f, burstsPerApproach: 3, targetsPerPass: 3,
+            saturation: true);
+
+        private static readonly EmploymentSpec Employment51 = new EmploymentSpec(
+            salvoNear: 1f, salvoFar: 2f, podCeiling: Rounds51,
+            overwhelmFactor: 1.5f, fullSalvoRange: 22000f,
+            preferredMinRange: 12000f, guidanceBudgetMilliradians: 25f,
+            burstSeconds: 1.2f, burstsPerApproach: 2, targetsPerPass: 2,
+            saturation: false);
 
         internal static readonly WeaponSpec[] Weapons =
         {
 
-            new WeaponSpec(MissileKey,   WeaponInfoName,   MissileUnitName,   ShortName,   true,  0.19f),
-            new WeaponSpec(MissileKey51, WeaponInfoName51, MissileUnitName51, ShortName51, false, 0.34f),
+            new WeaponSpec(MissileKey,   WeaponInfoName,   MissileUnitName,   ShortName,   true,  0.19f,    0.08f,   Employment31),
+            new WeaponSpec(MissileKey51, WeaponInfoName51, MissileUnitName51, ShortName51, false, 0.34f,    0.35f,   Employment51),
         };
 
         internal static bool IsOurRound(string? jsonKey)
@@ -154,6 +215,15 @@ namespace RocketPod
         internal static bool IsOurMount(string? jsonKey) => SpecFor(jsonKey) != null;
 
         internal static int RoundsFor(string? jsonKey) => SpecFor(jsonKey)?.Rounds ?? -1;
+
+        internal static float RippleIntervalFor(string? mountJsonKey)
+        {
+            MountSpec? mount = SpecFor(mountJsonKey);
+            if (mount == null) return -1f;
+
+            WeaponSpec? weapon = WeaponForRound(mount.Value.RoundKey);
+            return weapon?.RippleInterval ?? -1f;
+        }
 
         internal const string BundleName = "tenpin.nobp";
         internal const string MountAssetFragment = "tenpin_weaponmount";

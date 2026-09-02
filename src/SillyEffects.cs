@@ -52,9 +52,8 @@ namespace RocketPod
                 _motorLogged = true;
 
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] Silly effects are ON, so the plume was recoloured to the retired " +
-                    $"cyan set ({touched} system(s)). Turn Effects/Silly effects off for the " +
-                    "weapon's actual motor.");
+                    $"[Tenpin] Silly effects ON: the plume was recoloured cyan " +
+                    $"({touched} system(s)).");
             }
             catch (Exception ex)
             {
@@ -144,11 +143,9 @@ namespace RocketPod
                 _motorLogged = true;
 
                 Plugin.Log.LogInfo(
-                    $"[Tenpin] The authored effects were taken back out ({cleared} slot(s) " +
+                    $"[Tenpin] Authored effects removed ({cleared} slot(s) " +
                     (fx != null ? $"cleared, '{MotorFxName}' disabled" : "cleared") +
-                    $") and a stock donor is borrowed instead - MotorEffectDonor is " +
-                    $"'{Plugin.MotorEffectDonor.Value}'. Turn on Effects/Silly effects for the " +
-                    "cyan set.");
+                    $"), borrowing '{Plugin.MotorEffectDonor.Value}'.");
             }
             catch (Exception ex)
             {

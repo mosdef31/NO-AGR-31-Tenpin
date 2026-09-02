@@ -30,12 +30,13 @@ namespace RocketPod
                     if (!_loggedBroken)
                     {
                         _loggedBroken = true;
+
                         Plugin.Log.LogWarning(
-                            "[Tenpin] Could not find WeaponManager.aircraft/targetList by " +
-                            "reflection, so the single-target salvo is off. With more than one " +
-                            "unit locked the pod will fire ONE rocket per target instead of its " +
-                            $"load at one point. Re-check the decompile: aircraft={_fAircraft != null} " +
-                            $"targetList={_fTargetList != null}.");
+                            "[Tenpin] WeaponManager fields not found, so single-target " +
+                            "salvo is off.");
+                        Plugin.Log.LogWarning(
+                            $"[Tenpin] aircraft={_fAircraft != null} " +
+                            $"targetList={_fTargetList != null}. Re-check the decompile.");
                     }
                     return true;
                 }
@@ -69,11 +70,10 @@ namespace RocketPod
                 if (!_loggedRedirect)
                 {
                     _loggedRedirect = true;
+
                     Plugin.Log.LogInfo(
-                        $"[Tenpin] {targets.Count} targets locked. Firing the whole pod at the " +
-                        "first one instead of the game's one-rocket-per-target salvo, which for a " +
-                        "saturation weapon sends a single guided round to each unit. Extra locks " +
-                        "are a target list to cycle, not a fire order. Logged once per session.");
+                        $"[Tenpin] {targets.Count} targets locked; firing the whole pod " +
+                        "at the first.");
                 }
                 return false;
             }
